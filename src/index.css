@@ -1,0 +1,150 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+@theme {
+  /* Colors */
+  --color-brand-50:  #FFF7ED;
+  --color-brand-100: #FFEDD5;
+  --color-brand-200: #FED7AA;
+  --color-brand-300: #FDBA74;
+  --color-brand-400: #FB923C;
+  --color-brand-500: #F97316;
+  --color-brand-600: #EA580C;
+  --color-brand-700: #C2410C;
+  --color-brand-800: #9A3412;
+  --color-brand-900: #7C2D12;
+
+  --color-ink-50:  #F8F8F8;
+  --color-ink-100: #F1F1F1;
+  --color-ink-200: #E4E4E4;
+  --color-ink-300: #CBCBCB;
+  --color-ink-400: #A0A0A0;
+  --color-ink-500: #717171;
+  --color-ink-600: #4E4E4E;
+  --color-ink-700: #3D3D3D;
+  --color-ink-800: #2D2D2D;
+  --color-ink-900: #1A1A1A;
+  --color-ink-950: #0D0D0D;
+
+  --color-success-50:  #F0FDF4;
+  --color-success-100: #DCFCE7;
+  --color-success-500: #22C55E;
+  --color-success-600: #16A34A;
+  --color-success-700: #15803D;
+
+  --color-warning-50:  #FFFBEB;
+  --color-warning-200: #FDE68A;
+  --color-warning-500: #F59E0B;
+  --color-warning-600: #D97706;
+  --color-warning-700: #92400E;
+
+  --color-danger-50:  #FEF2F2;
+  --color-danger-200: #FECACA;
+  --color-danger-500: #EF4444;
+  --color-danger-600: #DC2626;
+  --color-danger-700: #B91C1C;
+
+  --color-info-50:  #EFF6FF;
+  --color-info-500: #3B82F6;
+  --color-info-600: #2563EB;
+  --color-info-700: #1D4ED8;
+
+  /* Font */
+  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+
+  /* Shadows */
+  --shadow-soft: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.06);
+  --shadow-card: 0 2px 4px rgba(0,0,0,.05), 0 12px 32px rgba(0,0,0,.08);
+  --shadow-pop:  0 8px 32px rgba(249,115,22,.35);
+
+  /* Radius */
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+
+  /* Animations */
+  --animate-fade-up:    fade-up .4s ease-out both;
+  --animate-fade-in:    fade-in .3s ease-out both;
+  --animate-fade-out:   fade-out .2s ease-in both;
+  --animate-scale-in:   scale-in .28s ease-out both;
+  --animate-slide-up:   slide-up .35s cubic-bezier(.32,.72,0,1) both;
+  --animate-slide-down: slide-down .25s cubic-bezier(.32,.72,0,1) both;
+  --animate-shimmer:    shimmer 1.4s linear infinite;
+
+  @keyframes fade-up    { 0% { opacity:0; transform:translateY(16px); } 100% { opacity:1; transform:translateY(0); } }
+  @keyframes fade-in    { 0% { opacity:0; } 100% { opacity:1; } }
+  @keyframes fade-out   { 0% { opacity:1; } 100% { opacity:0; } }
+  @keyframes scale-in   { 0% { opacity:0; transform:scale(.94); } 100% { opacity:1; transform:scale(1); } }
+  @keyframes slide-up   { 0% { transform:translateY(100%); } 100% { transform:translateY(0); } }
+  @keyframes slide-down { 0% { transform:translateY(0); } 100% { transform:translateY(100%); } }
+  @keyframes shimmer    { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
+}
+
+/* Height utility h-13 */
+@utility h-13 { height: 3.25rem; }
+
+/* Base */
+:root {
+  color-scheme: light;
+  --safe-top:    env(safe-area-inset-top,    0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*, *::before, *::after { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: #F6F7FB;
+  color: #1A1A1A;
+  overscroll-behavior-y: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Safe area helpers */
+.safe-top    { padding-top:    var(--safe-top); }
+.safe-bottom { padding-bottom: var(--safe-bottom); }
+.pt-safe     { padding-top:    calc(var(--safe-top) + 1rem); }
+.pb-safe     { padding-bottom: calc(var(--safe-bottom) + 1rem); }
+
+/* Scrollbar */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, #EBEBEB 25%, #F5F5F5 50%, #EBEBEB 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* Tap feedback */
+.tap { cursor: pointer; transition: transform .12s ease, opacity .12s ease; user-select: none; }
+.tap:active { transform: scale(.96); opacity: .9; }
+
+/* Glass */
+.glass {
+  background: rgba(255,255,255,.82);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+}
+
+/* Named animation helpers */
+.sheet-enter { animation: scale-in .28s ease-out both; }
+.slide-in    { animation: slide-up .35s cubic-bezier(.32,.72,0,1) both; }
+.slide-down  { animation: slide-down .25s cubic-bezier(.32,.72,0,1) both; }
+.fade-out    { animation: fade-out .2s ease-in both; }
+
+/* Text gradient */
+.text-gradient {
+  background: linear-gradient(135deg, #F97316, #EA580C);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Leaflet */
+.leaflet-container { font-family: var(--font-sans); z-index: 0; }
+.leaflet-control-zoom a { font-family: monospace; }
