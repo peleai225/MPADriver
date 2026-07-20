@@ -252,9 +252,15 @@ function DeliveryMap({ restaurantLat, restaurantLng, clientLat, clientLng }: {
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
 
+    // Flag pour annuler l'init si le composant est démonté avant que l'import se résout
+    let active = true;
+
     import('leaflet').then(L => {
+      // Double-garde : si démonté entre-temps OU si une autre instance a déjà été créée
+      if (!active || !mapRef.current || mapInstance.current) return;
+
       import('leaflet/dist/leaflet.css');
-      const map = L.map(mapRef.current!, { zoomControl: false, attributionControl: false });
+      const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false });
       mapInstance.current = map;
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
@@ -269,7 +275,11 @@ function DeliveryMap({ restaurantLat, restaurantLng, clientLat, clientLng }: {
       map.fitBounds(bounds, { padding: [40, 40] });
     });
 
-    return () => { mapInstance.current?.remove(); mapInstance.current = null; };
+    return () => {
+      active = false;
+      mapInstance.current?.remove();
+      mapInstance.current = null;
+    };
   }, []);
 
   return <div ref={mapRef} className="w-full h-full" />;

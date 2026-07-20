@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Driver } from './types';
-import { api, getDriver, getToken } from './api';
+import { api, clearAuth, getDriver, getToken } from './api';
 
 interface AuthCtx {
   driver: Driver | null;
@@ -32,7 +32,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) { setLoading(false); return; }
     api.me()
       .then(d => setDriver(d))
-      .catch(() => {})
+      .catch((err: any) => {
+        // Purger seulement si le token n'a pas été remplacé par un login entretemps
+        if (err?.status === 401 && getToken() === token) {
+          clearAuth();
+          setDriver(null);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 

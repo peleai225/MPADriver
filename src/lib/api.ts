@@ -41,6 +41,12 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
         message = data.errors[firstField][0];
       }
     }
+    // Token expiré en cours de session → purge uniquement si le token au moment
+    // de l'envoi est le même que celui en storage (évite d'effacer un token frais
+    // si la réponse d'un ancien /me arrive après un login)
+    if (res.status === 401 && !path.includes('/auth/login') && token && token === getToken()) {
+      clearAuth();
+    }
     const err: any = new Error(message);
     err.status = res.status;
     err.data = data;
