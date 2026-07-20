@@ -1,10 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { MapPin, Phone, Navigation, CheckCircle2, Truck, ArrowRight } from 'lucide-react';
 import { api } from '../lib/api';
+import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
 import { formatFCFA, DELIVERY_STATUS_LABELS } from '../lib/format';
 import { startTracking, stopTracking, openInMaps } from '../lib/geo';
+import { listenDeliveryStatus } from '../lib/echo';
+import { vibrate, notify } from '../lib/alert';
 import type { Delivery } from '../lib/types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -15,6 +18,7 @@ import { cn } from '../lib/utils';
 export function ActiveDeliveryPage() {
   const { go } = useNav();
   const { show } = useToast();
+  const { driver } = useAuth();
   const [delivery, setDelivery] = useState<Delivery | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -24,6 +28,7 @@ export function ActiveDeliveryPage() {
     api.getActiveDelivery().then(d => { setDelivery(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
+  // Rafraîchissement GPS
   useEffect(() => {
     if (!delivery) return;
     startTracking(async (lat, lng) => {
@@ -31,6 +36,34 @@ export function ActiveDeliveryPage() {
     });
     return () => stopTracking();
   }, [delivery?.id]);
+
+  // Pusher : écoute les changements de statut côté serveur (annulation, etc.)
+  useEffect(() => {
+    if (!driver?.id) return;
+    let active = true;
+    let unsub: (() => void) | null = null;
+
+    listenDeliveryStatus(driver.id, (data: any) => {
+      if (!active) return;
+      const newStatus: string = data?.new_status;
+      if (newStatus === 'cancelled') {
+        vibrate([500, 200, 500]);
+        notify('⚠️ Course annulée', 'La commande a été annulée.', () => go({ name: 'deliveries' }));
+        show('Course annulée.', 'error');
+        setDelivery(null);
+        stopTracking();
+        go({ name: 'deliveries' });
+        return;
+      }
+      // Rafraîchir les données de la livraison active
+      api.getActiveDelivery().then(d => { if (active) setDelivery(d); }).catch(() => {});
+    }).then(u => { if (active) unsub = u; });
+
+    return () => {
+      active = false;
+      unsub?.();
+    };
+  }, [driver?.id, go, show]);
 
   const advance = async () => {
     if (!delivery) return;

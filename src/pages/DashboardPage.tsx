@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Truck, Banknote, TrendingUp, Star, ChevronRight, AlertCircle } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
 import { formatFCFA } from '../lib/format';
+import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
+import { vibrate, notify, playAlert, requestNotificationPermission } from '../lib/alert';
 import type { EarningsSummary, Delivery } from '../lib/types';
 import { Card, CardContent } from '../components/ui/card';
 import { cn } from '../lib/utils';
@@ -18,12 +20,59 @@ export function DashboardPage() {
   const [activeDelivery, setActiveDelivery] = useState<Delivery | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [togglingOnline, setTogglingOnline] = useState(false);
+  const unsubsRef = useRef<Array<() => void>>([]);
 
+  const loadPending = useCallback(async (silent = false) => {
+    try {
+      const d = await api.getPendingDeliveries();
+      setPendingCount(d.length);
+      if (!silent && d.length > 0) show(`${d.length} course${d.length > 1 ? 's' : ''} disponible${d.length > 1 ? 's' : ''} !`, 'success');
+    } catch {}
+  }, [show]);
+
+  // Chargement initial
   useEffect(() => {
     api.getEarnings().then(setEarnings).catch(() => {});
     api.getActiveDelivery().then(setActiveDelivery).catch(() => {});
-    api.getPendingDeliveries().then(d => setPendingCount(d.length)).catch(() => {});
-  }, []);
+    loadPending(true);
+    requestNotificationPermission();
+  }, [loadPending]);
+
+  // Souscriptions Pusher
+  useEffect(() => {
+    if (!driver?.city || !driver?.is_available) return;
+    let active = true;
+    const unsubs: Array<() => void> = [];
+
+    // Canal ville : nouvelle course disponible
+    listenNewDelivery(driver.city, () => {
+      if (!active) return;
+      loadPending(true);
+      vibrate([200, 100, 200, 100, 200]);
+      playAlert();
+      notify('🛵 Nouvelle course !', 'Une course est disponible dans votre zone.', () => go({ name: 'deliveries' }));
+      show('🛵 Nouvelle course disponible !', 'success');
+    }).then(unsub => { if (active) unsubs.push(unsub); });
+
+    // Canal privé livreur : assignation automatique
+    if (driver?.id) {
+      listenDriverAssigned(driver.id, (data: any) => {
+        if (!active) return;
+        api.getActiveDelivery().then(d => { setActiveDelivery(d); }).catch(() => {});
+        vibrate([300, 100, 300, 100, 500]);
+        playAlert();
+        notify('✅ Course assignée !', `Commande ${data?.order_ref ?? ''} — allez chercher la commande.`, () => go({ name: 'active-delivery' }));
+        show('✅ Course assignée — démarrez !', 'success');
+      }).then(unsub => { if (active) unsubs.push(unsub); });
+    }
+
+    unsubsRef.current = unsubs;
+    return () => {
+      active = false;
+      unsubsRef.current.forEach(u => u());
+      unsubsRef.current = [];
+    };
+  }, [driver?.id, driver?.city, driver?.is_available, go, show, loadPending]);
 
   const toggleOnline = async () => {
     if (!driver) return;
