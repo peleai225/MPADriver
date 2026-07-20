@@ -16,7 +16,7 @@ export async function getEcho(): Promise<InstanceType<typeof Echo> | null> {
   if (echoInstance) return echoInstance;
 
   try {
-    const res = await fetch(`${API_BASE}/config/public`);
+    const res = await fetch(`${API_BASE}/config`);
     if (!res.ok) return null;
     const data = await res.json();
 
