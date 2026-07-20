@@ -1,17 +1,21 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { RefreshCw, PackageSearch } from 'lucide-react';
 import { api } from '../lib/api';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
+import { useAuth } from '../lib/auth';
+import { getEcho } from '../lib/echo';
 import { DeliveryCard } from '../components/DeliveryCard';
 import type { Delivery } from '../lib/types';
 
 export function DeliveriesPage() {
   const { go } = useNav();
   const { show } = useToast();
+  const { driver } = useAuth();
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<number | null>(null);
+  const channelRef = useRef<any>(null);
 
   const load = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -27,10 +31,32 @@ export function DeliveriesPage() {
 
   useEffect(() => {
     load();
-    // 5s en premier plan pour réactivité maximale
-    const interval = setInterval(() => load(true), 5000);
+    const interval = setInterval(() => load(true), 15000);
     return () => clearInterval(interval);
   }, [load]);
+
+  // Écoute Pusher : nouvelle course disponible dans la ville du livreur
+  useEffect(() => {
+    if (!driver?.city) return;
+    let active = true;
+
+    getEcho().then(echo => {
+      if (!active || !echo) return;
+      const city = driver.city.toLowerCase().replace(/\s+/g, '-');
+      channelRef.current = echo.channel(`drivers.city.${city}`);
+      channelRef.current.listen('.delivery.available', () => {
+        load(true);
+      });
+    });
+
+    return () => {
+      active = false;
+      if (channelRef.current) {
+        channelRef.current.stopListening('.delivery.available');
+        channelRef.current = null;
+      }
+    };
+  }, [driver?.city, load]);
 
   const handleAccept = async (id: number) => {
     setActionId(id);
@@ -79,7 +105,7 @@ export function DeliveriesPage() {
       {/* Barre de rafraîchissement auto */}
       {!loading && deliveries.length > 0 && (
         <div className="px-4 pt-3 pb-0">
-          <p className="text-xs text-ink-400 text-center">Actualisation automatique toutes les 10s</p>
+          <p className="text-xs text-ink-400 text-center">Mise à jour en temps réel</p>
         </div>
       )}
 
