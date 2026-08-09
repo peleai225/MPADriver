@@ -144,4 +144,27 @@ export const api = {
       body: JSON.stringify({ amount, payment_method: 'wave', phone }),
     });
   },
+
+  // Cash on delivery
+  async confirmCashCollected(deliveryId: number, amountCollected: number): Promise<{ message: string; amount_owed: number; restaurant: string }> {
+    return await request(`/driver/deliveries/${deliveryId}/cash-collected`, {
+      method: 'POST',
+      body: JSON.stringify({ amount_collected: amountCollected }),
+    });
+  },
+
+  async getCashBalance(): Promise<{ total_owed_xof: number; debts: Array<{ id: number; restaurant_name: string; order_ref: string; amount_xof: number; created_at: string }> }> {
+    return await request('/driver/cash-balance');
+  },
+
+  async declareCashRemittance(data: { debt_id: number; amount_xof: number; method: string; wave_reference?: string; note?: string }): Promise<{ message: string; remittance_id: number }> {
+    return await request('/driver/cash-remittances', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getCashRemittances(): Promise<any> {
+    return await request('/driver/cash-remittances');
+  },
 };

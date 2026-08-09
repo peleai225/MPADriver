@@ -23,6 +23,9 @@ export function ActiveDeliveryPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [done, setDone] = useState(false);
+  const [showCashModal, setShowCashModal] = useState(false);
+  const [cashAmount, setCashAmount] = useState('');
+  const [cashDebt, setCashDebt] = useState<{amount_owed: number; restaurant: string} | null>(null);
 
   useEffect(() => {
     api.getActiveDelivery().then(d => { setDelivery(d); setLoading(false); }).catch(() => setLoading(false));
@@ -77,6 +80,11 @@ export function ActiveDeliveryPage() {
       const updated = await api.updateDeliveryStatus(delivery.id, next);
       if (next === 'delivered') {
         stopTracking();
+        if (delivery.order?.payment_method === 'cash_on_delivery') {
+          setShowCashModal(true);
+          setDone(false); // don't show done yet
+          return;
+        }
         setDone(true);
         return;
       }
@@ -271,6 +279,64 @@ export function ActiveDeliveryPage() {
           )}
         </Button>
       </div>
+
+      {/* Cash collection modal */}
+      {showCashModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-end z-50">
+          <div className="bg-white w-full rounded-t-2xl p-6 space-y-4">
+            <h2 className="text-lg font-bold">Confirmer la collecte cash</h2>
+            <p className="text-sm text-neutral-500">
+              Entrez le montant total reçu du client (plat + livraison).
+            </p>
+            <div>
+              <label className="text-sm font-medium">Montant collecté (FCFA)</label>
+              <input
+                type="number"
+                value={cashAmount}
+                onChange={e => setCashAmount(e.target.value)}
+                placeholder={delivery?.order?.total?.toString() ?? ''}
+                className="w-full mt-1 px-4 py-3 border rounded-xl text-lg font-bold"
+                autoFocus
+              />
+            </div>
+            {cashDebt && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-sm font-bold text-amber-800">
+                  Tu dois reverser {cashDebt.amount_owed.toLocaleString('fr-FR')} F à {cashDebt.restaurant}
+                </p>
+              </div>
+            )}
+            <button
+              onClick={async () => {
+                const amount = parseInt(cashAmount);
+                if (!amount) { show('Entrez le montant collecté.', 'error'); return; }
+                setUpdating(true);
+                try {
+                  const result = await api.confirmCashCollected(delivery!.id, amount);
+                  setCashDebt({ amount_owed: result.amount_owed, restaurant: result.restaurant });
+                  if (result.amount_owed === 0) {
+                    show('Livraison terminée !', 'success');
+                    setShowCashModal(false);
+                    setDone(true);
+                  } else {
+                    show(`Tu dois reverser ${result.amount_owed.toLocaleString('fr-FR')} F à ${result.restaurant}`, 'info');
+                    setShowCashModal(false);
+                    setDone(true);
+                  }
+                } catch (e: any) {
+                  show(e.message || 'Erreur', 'error');
+                } finally {
+                  setUpdating(false);
+                }
+              }}
+              disabled={updating}
+              className="w-full py-4 bg-orange-500 text-white font-bold rounded-xl text-base disabled:opacity-50"
+            >
+              {updating ? 'Confirmation...' : "J'ai collecté l'argent"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

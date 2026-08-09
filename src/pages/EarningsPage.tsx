@@ -12,6 +12,57 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetCloseButton } from '
 import { Separator } from '../components/ui/separator';
 import { cn } from '../lib/utils';
 
+function RemittanceForm({ debt, onSuccess, onClose }: { debt: any; onSuccess: () => void; onClose: () => void }) {
+  const { show } = useToast();
+  const [method, setMethod] = useState('wave');
+  const [waveRef, setWaveRef] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    setLoading(true);
+    try {
+      await api.declareCashRemittance({
+        debt_id: debt.id,
+        amount_xof: debt.amount_xof,
+        method,
+        wave_reference: waveRef || undefined,
+      });
+      onSuccess();
+    } catch (e: any) {
+      show(e.message || 'Erreur', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="text-sm font-medium">Moyen de paiement</label>
+        <select value={method} onChange={e => setMethod(e.target.value)} className="w-full mt-1 px-4 py-3 border rounded-xl">
+          <option value="wave">Wave</option>
+          <option value="orange_money">Orange Money</option>
+          <option value="mtn_money">MTN MoMo</option>
+          <option value="moov_money">Moov Money</option>
+          <option value="cash">Cash (en main propre)</option>
+        </select>
+      </div>
+      {method !== 'cash' && (
+        <div>
+          <label className="text-sm font-medium">Référence transaction (optionnel)</label>
+          <input value={waveRef} onChange={e => setWaveRef(e.target.value)} placeholder="Ex: W123456789" className="w-full mt-1 px-4 py-3 border rounded-xl" />
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button onClick={onClose} className="flex-1 py-3 border rounded-xl text-sm font-semibold">Annuler</button>
+        <button onClick={submit} disabled={loading} className="flex-1 py-3 bg-orange-500 text-white rounded-xl text-sm font-bold disabled:opacity-50">
+          {loading ? 'Envoi...' : 'Confirmer'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function EarningsPage() {
   const { driver } = useAuth();
   const { show } = useToast();
@@ -24,12 +75,16 @@ export function EarningsPage() {
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutPhone, setPayoutPhone] = useState(driver?.phone ?? '');
   const [payoutLoading, setPayoutLoading] = useState(false);
+  const [cashBalance, setCashBalance] = useState<{total_owed_xof: number; debts: any[]} | null>(null);
+  const [showRemittanceSheet, setShowRemittanceSheet] = useState(false);
+  const [selectedDebt, setSelectedDebt] = useState<any>(null);
 
   useEffect(() => {
     api.getEarnings().then(setSummary).catch(() => {});
     api.getEarningsHistory(1)
       .then(r => { setHistory(r.data); setLastPage(r.meta.last_page); setLoading(false); })
       .catch(() => setLoading(false));
+    api.getCashBalance().then(setCashBalance).catch(() => {});
   }, []);
 
   const loadMore = async () => {
@@ -104,6 +159,37 @@ export function EarningsPage() {
         </div>
       </div>
 
+      {/* Dettes cash */}
+      {cashBalance && cashBalance.total_owed_xof > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mx-4 mt-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-amber-900">Argent à reverser</h3>
+            <span className="font-black text-amber-700 text-lg">
+              {cashBalance.total_owed_xof.toLocaleString('fr-FR')} F
+            </span>
+          </div>
+          <div className="space-y-2">
+            {cashBalance.debts.map((debt: any) => (
+              <div key={debt.id} className="bg-white rounded-xl p-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold">{debt.restaurant_name}</p>
+                  <p className="text-xs text-neutral-500">Cmd {debt.order_ref}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-sm">{debt.amount_xof.toLocaleString('fr-FR')} F</p>
+                  <button
+                    onClick={() => { setSelectedDebt(debt); setShowRemittanceSheet(true); }}
+                    className="text-xs text-orange-600 font-semibold mt-0.5"
+                  >
+                    Déclarer versement
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Historique */}
       <div className="px-4 mt-5">
         <div className="flex items-center gap-2 mb-3">
@@ -151,6 +237,27 @@ export function EarningsPage() {
           </div>
         )}
       </div>
+
+      {/* Sheet Remittance */}
+      {showRemittanceSheet && selectedDebt && (
+        <div className="fixed inset-0 bg-black/60 flex items-end z-50">
+          <div className="bg-white w-full rounded-t-2xl p-6 space-y-4">
+            <h2 className="text-lg font-bold">Déclarer un reversement</h2>
+            <p className="text-sm text-neutral-500">
+              Pour : <strong>{selectedDebt.restaurant_name}</strong> — {selectedDebt.amount_xof.toLocaleString('fr-FR')} F
+            </p>
+            <RemittanceForm
+              debt={selectedDebt}
+              onSuccess={() => {
+                setShowRemittanceSheet(false);
+                api.getCashBalance().then(setCashBalance).catch(() => {});
+                show('Reversement déclaré. En attente de confirmation du restaurant.', 'success');
+              }}
+              onClose={() => setShowRemittanceSheet(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Sheet Payout */}
       <Sheet open={showPayout} onOpenChange={setShowPayout}>
