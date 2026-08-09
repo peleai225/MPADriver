@@ -34,17 +34,13 @@ export function LoginPage() {
   return (
     <div className="min-h-screen bg-ink-950 flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center px-6 pt-16 pb-8">
-        {/* Logo */}
-        <div className="relative mb-8">
-          <div className="w-20 h-20 rounded-[2rem] bg-gradient-to-br from-brand-400 to-brand-600 shadow-pop grid place-items-center">
-            <span className="text-white font-extrabold text-3xl tracking-tighter">M</span>
-          </div>
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success-500 border-2 border-ink-950 grid place-items-center">
-            <span className="text-white text-[8px] font-bold">✓</span>
+        {/* Logo officiel */}
+        <div className="mb-8 flex flex-col items-center gap-3">
+          <div className="w-56 bg-white rounded-3xl px-4 py-3 shadow-pop">
+            <img src="/logo.png" alt="MenuPro Livraison" className="w-full h-auto object-contain" />
           </div>
         </div>
 
-        <h1 className="text-white font-extrabold text-2xl tracking-tight">MenuPro Livreur</h1>
         <p className="text-ink-400 text-sm mt-1.5">Connectez-vous à votre espace livreur</p>
 
         <form onSubmit={handleSubmit} className="w-full max-w-sm mt-10 space-y-3">

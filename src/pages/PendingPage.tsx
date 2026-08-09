@@ -20,6 +20,11 @@ export function PendingPage() {
 
   return (
     <div className="min-h-screen bg-ink-950 flex flex-col items-center justify-center px-6 text-center">
+      {/* Logo */}
+      <div className="mb-6 bg-white rounded-2xl px-4 py-2">
+        <img src="/logo.png" alt="MenuPro Livraison" className="h-12 object-contain" />
+      </div>
+
       {/* Icône animée */}
       <div className="relative mb-8">
         <div className="w-24 h-24 rounded-full bg-warning-500/10 border border-warning-500/20 grid place-items-center animate-pulse">

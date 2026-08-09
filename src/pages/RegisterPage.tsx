@@ -108,11 +108,13 @@ export function RegisterPage() {
         >
           <ChevronLeft size={20} className="text-white" />
         </button>
-        <div className="flex-1">
-          <h1 className="text-white font-bold text-base">Créer un compte livreur</h1>
-          <p className="text-ink-400 text-xs">{STEPS[step]}</p>
+        <div className="flex-1 flex items-center gap-2">
+          <img src="/logo.png" alt="MenuPro" className="h-7 object-contain" />
         </div>
-        <span className="text-ink-500 text-xs">{step + 1}/3</span>
+        <div className="text-right">
+          <p className="text-white text-xs font-semibold">{STEPS[step]}</p>
+          <p className="text-ink-500 text-[10px]">{step + 1}/3</p>
+        </div>
       </div>
 
       {/* Progress stepper */}
