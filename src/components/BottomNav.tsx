@@ -1,11 +1,9 @@
 import { Home, Package, Navigation, Wallet, User } from 'lucide-react';
 import { useNav } from '../lib/nav';
-import { cn } from '../lib/utils';
 
-function NavItem({ icon: Icon, label, name, active, onClick }: {
+function NavItem({ icon: Icon, label, active, onClick }: {
   icon: React.ElementType;
   label: string;
-  name: string;
   active: boolean;
   onClick: () => void;
 }) {
@@ -44,14 +42,12 @@ export function BottomNav() {
         <NavItem
           icon={Home}
           label="Accueil"
-          name="dashboard"
           active={tab === 'dashboard'}
           onClick={() => go({ name: 'dashboard' })}
         />
         <NavItem
           icon={Package}
           label="Courses"
-          name="deliveries"
           active={tab === 'deliveries'}
           onClick={() => go({ name: 'deliveries' })}
         />
@@ -68,14 +64,12 @@ export function BottomNav() {
         <NavItem
           icon={Wallet}
           label="Gains"
-          name="earnings"
           active={tab === 'earnings'}
           onClick={() => go({ name: 'earnings' })}
         />
         <NavItem
           icon={User}
           label="Profil"
-          name="profile"
           active={tab === 'profile'}
           onClick={() => go({ name: 'profile' })}
         />

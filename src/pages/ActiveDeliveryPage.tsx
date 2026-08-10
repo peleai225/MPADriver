@@ -9,7 +9,6 @@ import { startTracking, stopTracking, openInMaps } from '../lib/geo';
 import { listenDeliveryStatus } from '../lib/echo';
 import { vibrate, notify } from '../lib/alert';
 import type { Delivery } from '../lib/types';
-import { cn } from '../lib/utils';
 
 export function ActiveDeliveryPage() {
   const { go } = useNav();
