@@ -130,10 +130,10 @@ export function DashboardPage() {
                 {earnings?.deliveries_today ?? 0} course{(earnings?.deliveries_today ?? 0) !== 1 ? 's' : ''}
               </p>
             </div>
-            <div className="rounded-2xl p-3.5" style={{ background: 'rgba(255,97,0,0.18)', border: '1px solid rgba(255,97,0,0.25)' }}>
-              <p className="text-white/50 text-xs mb-1">Courses auj.</p>
-              <p className="font-extrabold text-xl" style={{ color: '#FF6100' }}>{earnings?.deliveries_today ?? 0}</p>
-              <p className="text-white/30 text-[10px] mt-0.5">Solde: {formatFCFA(earnings?.balance_available ?? 0)}</p>
+            <div className="rounded-2xl p-3.5" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <p className="text-white/50 text-xs mb-1">Solde disponible</p>
+              <p className="text-white font-extrabold text-xl">{formatFCFA(earnings?.balance_available ?? 0)}</p>
+              <p className="text-white/30 text-[10px] mt-0.5">{earnings?.deliveries_today ?? 0} courses auj.</p>
             </div>
           </div>
         </div>
@@ -245,19 +245,16 @@ export function DashboardPage() {
           <div className="grid grid-cols-3 gap-2">
             <StatCell
               icon={<Truck size={16} style={{ color: '#FF6100' }} />}
-              bg="rgba(255,97,0,0.1)"
               value={String(earnings?.deliveries_today ?? 0)}
               label="Auj."
             />
             <StatCell
-              icon={<Banknote size={16} className="text-success-600" />}
-              bg="#F0FDF4"
+              icon={<Banknote size={16} style={{ color: '#FF6100' }} />}
               value={formatFCFA(earnings?.this_week ?? 0)}
               label="Semaine"
             />
             <StatCell
-              icon={<Star size={16} className="text-warning-500" />}
-              bg="#FFFBEB"
+              icon={<Star size={16} style={{ color: '#FF6100' }} />}
               value={ratingDisplay}
               label="Note"
             />
@@ -268,15 +265,14 @@ export function DashboardPage() {
   );
 }
 
-function StatCell({ icon, bg, value, label }: {
+function StatCell({ icon, value, label }: {
   icon: React.ReactNode;
-  bg: string;
   value: string;
   label: string;
 }) {
   return (
     <div className="text-center">
-      <div className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto mb-2" style={{ background: bg }}>
+      <div className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto mb-2" style={{ background: 'rgba(255,97,0,0.1)' }}>
         {icon}
       </div>
       <p className="font-extrabold text-ink-900 text-base leading-tight">{value}</p>

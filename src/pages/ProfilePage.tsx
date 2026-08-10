@@ -94,13 +94,13 @@ export function ProfilePage() {
             />
             <ProfileStat
               icon={<Star size={16} className="text-warning-500" />}
-              iconBg="#FFFBEB"
+              iconBg="rgba(255,97,0,0.1)"
               value={driver.rating != null ? Number(driver.rating).toFixed(1) : '5.0'}
               label="Note"
             />
             <ProfileStat
               icon={<Award size={16} className="text-ink-400" />}
-              iconBg="#F8F8F8"
+              iconBg="rgba(255,97,0,0.1)"
               value={level}
               label="Niveau"
             />
@@ -119,14 +119,14 @@ export function ProfilePage() {
           />
           <InfoRow
             icon={<span className="text-sm">{vehicleInfo?.emoji ?? '🚗'}</span>}
-            iconBg="#F8F8F8"
+            iconBg="rgba(255,97,0,0.1)"
             label="Véhicule"
             value={vehicleInfo?.label ?? driver.vehicle_type}
           />
           {driver.vehicle_plate && (
             <InfoRow
               icon={<span className="text-xs font-bold text-ink-500">🪪</span>}
-              iconBg="#F8F8F8"
+              iconBg="rgba(255,97,0,0.1)"
               label="Plaque"
               value={driver.vehicle_plate}
             />

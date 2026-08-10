@@ -122,14 +122,14 @@ export function EarningsPage() {
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
-      <div className="bg-ink-950 px-4 pt-safe pb-6">
+      <div className="px-4 pt-safe pb-6" style={{ background: '#1C1C1C' }}>
         <div className="flex items-center gap-2 mb-5">
-          <TrendingUp size={18} className="text-brand-400" />
+          <TrendingUp size={18} style={{ color: '#FF6100' }} />
           <h1 className="text-white font-bold text-lg">Mes gains</h1>
         </div>
 
         {/* Solde hero */}
-        <div className="relative bg-gradient-to-br from-brand-500 to-brand-700 rounded-3xl p-5 text-center overflow-hidden mb-4">
+        <div className="relative rounded-3xl p-5 text-center overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #FF3301, #FF6100)' }}>
           <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10 pointer-events-none" />
           <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-white/5 pointer-events-none" />
           <p className="text-white/70 text-xs mb-1 relative">Solde disponible</p>
@@ -151,8 +151,8 @@ export function EarningsPage() {
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2">
           {stats.map(s => (
-            <div key={s.label} className="bg-white/8 border border-white/8 rounded-2xl p-3">
-              <p className="text-ink-400 text-xs">{s.label}</p>
+            <div key={s.label} className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}>
+              <p className="text-white/50 text-xs">{s.label}</p>
               <p className="text-white font-bold text-sm mt-0.5">{formatFCFA(s.value)}</p>
             </div>
           ))}
