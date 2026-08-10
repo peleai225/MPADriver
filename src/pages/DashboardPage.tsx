@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Truck, Banknote, TrendingUp, Star, ChevronRight, AlertCircle } from 'lucide-react';
+import { Truck, Banknote, Star, ChevronRight, AlertCircle, Bell } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
@@ -8,7 +8,6 @@ import { formatFCFA } from '../lib/format';
 import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, notify, playAlert, requestNotificationPermission } from '../lib/alert';
 import type { EarningsSummary, Delivery } from '../lib/types';
-import { Card, CardContent } from '../components/ui/card';
 import { cn } from '../lib/utils';
 
 export function DashboardPage() {
@@ -95,69 +94,108 @@ export function DashboardPage() {
   const ratingDisplay = driver?.rating != null ? Number(driver.rating).toFixed(1) : '5.0';
 
   return (
-    <div className="min-h-screen pb-24">
-      {/* Header */}
-      <div className="relative bg-ink-950 overflow-hidden safe-top">
-        <div className="absolute -top-12 -right-12 w-72 h-72 rounded-full pointer-events-none"
-          style={{ background: 'radial-gradient(circle, rgba(249,115,22,.25) 0%, transparent 65%)' }} />
-
-        <div className="relative px-4 pt-4 pb-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-ink-400 text-xs mb-0.5">Bonjour 👋</p>
-              <p className="text-white font-extrabold text-xl leading-tight">
-                {driver?.name?.split(' ')[0] || 'Livreur'}
-              </p>
-              {driver?.city && <p className="text-ink-500 text-xs mt-0.5">{driver.city}</p>}
+    <div className="min-h-screen pb-24" style={{ background: '#F8F6F5' }}>
+      {/* Header charcoal */}
+      <div className="safe-top" style={{ background: '#1C1C1C' }}>
+        <div className="px-4 pt-4 pb-6">
+          {/* Top row */}
+          <div className="flex items-start justify-between mb-5">
+            <div className="flex items-center gap-3">
+              {/* Avatar */}
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 gradient-flame"
+              >
+                <span className="text-white font-extrabold text-base">
+                  {driver?.name?.[0]?.toUpperCase() ?? 'L'}
+                </span>
+              </div>
+              <div>
+                <p className="text-white/50 text-xs">Bonjour 👋</p>
+                <p className="text-white font-extrabold text-lg leading-tight">
+                  {driver?.name?.split(' ')[0] || 'Livreur'}
+                </p>
+              </div>
             </div>
-
-            <button
-              onClick={toggleOnline}
-              disabled={togglingOnline || !!activeDelivery}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold tap disabled:opacity-50 transition-colors',
-                isOnline
-                  ? 'bg-success-500 text-white shadow-[0_4px_14px_rgba(34,197,94,.4)]'
-                  : 'bg-white/10 text-white/70 border border-white/10',
-              )}
-            >
-              <span className={cn('w-2 h-2 rounded-full', isOnline ? 'bg-white animate-pulse' : 'bg-white/40')} />
-              {togglingOnline ? '...' : isOnline ? 'En ligne' : 'Hors ligne'}
+            <button className="w-10 h-10 rounded-full flex items-center justify-center tap" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <Bell size={18} className="text-white/70" />
             </button>
           </div>
 
+          {/* Stats cards */}
           <div className="grid grid-cols-2 gap-2.5">
-            <div className="bg-white/10 border border-white/10 rounded-2xl p-3.5">
-              <p className="text-ink-400 text-xs mb-1">Gains aujourd'hui</p>
+            <div className="rounded-2xl p-3.5" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <p className="text-white/50 text-xs mb-1">Gains aujourd'hui</p>
               <p className="text-white font-extrabold text-xl">{formatFCFA(earnings?.today ?? 0)}</p>
-              <p className="text-ink-500 text-[10px] mt-0.5">
+              <p className="text-white/30 text-[10px] mt-0.5">
                 {earnings?.deliveries_today ?? 0} course{(earnings?.deliveries_today ?? 0) !== 1 ? 's' : ''}
               </p>
             </div>
-            <div className="bg-brand-500/20 border border-brand-500/20 rounded-2xl p-3.5">
-              <p className="text-ink-400 text-xs mb-1">Solde disponible</p>
-              <p className="text-brand-400 font-extrabold text-xl">{formatFCFA(earnings?.balance_available ?? 0)}</p>
-              <p className="text-ink-500 text-[10px] mt-0.5">Disponible</p>
+            <div className="rounded-2xl p-3.5" style={{ background: 'rgba(255,97,0,0.18)', border: '1px solid rgba(255,97,0,0.25)' }}>
+              <p className="text-white/50 text-xs mb-1">Courses auj.</p>
+              <p className="font-extrabold text-xl" style={{ color: '#FF6100' }}>{earnings?.deliveries_today ?? 0}</p>
+              <p className="text-white/30 text-[10px] mt-0.5">Solde: {formatFCFA(earnings?.balance_available ?? 0)}</p>
             </div>
           </div>
         </div>
       </div>
 
       <div className="px-4 space-y-3 mt-4">
+        {/* Toggle Online/Offline */}
+        <button
+          onClick={toggleOnline}
+          disabled={togglingOnline || !!activeDelivery}
+          className={cn(
+            'w-full rounded-2xl p-4 flex items-center justify-between tap disabled:opacity-50 transition-all',
+          )}
+          style={isOnline
+            ? { background: 'linear-gradient(135deg, #FF3301, #FF6100)', boxShadow: '0 8px 24px rgba(255,97,0,.35)' }
+            : { background: '#FFFFFF', border: '1px solid #E4E4E4' }
+          }
+        >
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: isOnline ? 'rgba(255,255,255,0.2)' : '#F1F1F1' }}
+            >
+              <span
+                className={cn('w-3 h-3 rounded-full', isOnline ? 'bg-white animate-pulse' : 'bg-ink-400')}
+              />
+            </div>
+            <div className="text-left">
+              <p className={cn('font-bold text-sm', isOnline ? 'text-white' : 'text-ink-900')}>
+                {togglingOnline ? 'Mise à jour...' : isOnline ? 'En ligne ●' : 'Hors ligne'}
+              </p>
+              <p className={cn('text-xs', isOnline ? 'text-white/70' : 'text-ink-400')}>
+                {isOnline ? 'Vous recevez des courses' : 'Appuyez pour passer en ligne'}
+              </p>
+            </div>
+          </div>
+          <div
+            className="w-12 h-6 rounded-full relative transition-all"
+            style={{ background: isOnline ? 'rgba(255,255,255,0.3)' : '#E4E4E4' }}
+          >
+            <div
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all duration-300 shadow-sm"
+              style={{ left: isOnline ? '26px' : '2px' }}
+            />
+          </div>
+        </button>
+
         {/* Course active */}
         {activeDelivery && (
           <button
             onClick={() => go({ name: 'active-delivery' })}
-            className="w-full bg-gradient-to-r from-brand-500 to-brand-600 rounded-3xl p-4 flex items-center gap-3 shadow-pop tap"
+            className="w-full rounded-3xl p-4 flex items-center gap-3 tap"
+            style={{ background: '#1C1C1C', borderLeft: '4px solid #FF6100' }}
           >
-            <div className="w-11 h-11 rounded-2xl bg-white/20 grid place-items-center shrink-0">
-              <Truck size={22} className="text-white" />
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'rgba(255,97,0,0.2)' }}>
+              <Truck size={22} style={{ color: '#FF6100' }} />
             </div>
             <div className="flex-1 text-left">
               <p className="text-white font-bold text-sm">Course en cours</p>
-              <p className="text-white/70 text-xs truncate">{activeDelivery.order.restaurant.name} → client</p>
+              <p className="text-white/50 text-xs truncate">{activeDelivery.order.restaurant.name} → client</p>
             </div>
-            <div className="w-8 h-8 rounded-full bg-white/20 grid place-items-center">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.1)' }}>
               <ChevronRight size={16} className="text-white" />
             </div>
           </button>
@@ -167,12 +205,12 @@ export function DashboardPage() {
         {!activeDelivery && isOnline && (
           <button
             onClick={() => go({ name: 'deliveries' })}
-            className="w-full bg-white rounded-3xl p-4 shadow-card flex items-center gap-3 tap border border-ink-100"
+            className="w-full bg-white rounded-3xl p-4 shadow-soft flex items-center gap-3 tap border border-ink-100"
           >
-            <div className="w-11 h-11 rounded-2xl bg-brand-50 grid place-items-center shrink-0 relative">
-              <Truck size={21} className="text-brand-600" />
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 relative" style={{ background: 'rgba(255,97,0,0.1)' }}>
+              <Truck size={21} style={{ color: '#FF6100' }} />
               {pendingCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-brand-500 text-white text-[9px] font-bold grid place-items-center shadow-sm">
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center shadow-sm gradient-flame">
                   {pendingCount > 9 ? '9+' : pendingCount}
                 </span>
               )}
@@ -190,8 +228,8 @@ export function DashboardPage() {
         )}
 
         {!activeDelivery && !isOnline && (
-          <div className="bg-white rounded-3xl p-4 shadow-card flex items-center gap-3 border border-ink-100">
-            <div className="w-11 h-11 rounded-2xl bg-ink-50 grid place-items-center shrink-0">
+          <div className="bg-white rounded-3xl p-4 shadow-soft flex items-center gap-3 border border-ink-100">
+            <div className="w-11 h-11 rounded-2xl bg-ink-50 flex items-center justify-center shrink-0">
               <AlertCircle size={20} className="text-ink-400" />
             </div>
             <div>
@@ -202,46 +240,29 @@ export function DashboardPage() {
         )}
 
         {/* Stats semaine */}
-        <Card>
-          <CardContent className="pt-4">
-            <p className="font-bold text-ink-900 text-sm mb-4">Cette semaine</p>
-            <div className="grid grid-cols-3 gap-2">
-              <StatCell
-                icon={<Truck size={16} className="text-brand-600" />}
-                bg="bg-brand-50"
-                value={String(earnings?.deliveries_today ?? 0)}
-                label="Auj."
-              />
-              <StatCell
-                icon={<Banknote size={16} className="text-success-600" />}
-                bg="bg-success-50"
-                value={formatFCFA(earnings?.this_week ?? 0)}
-                label="Semaine"
-              />
-              <StatCell
-                icon={<Star size={16} className="text-warning-500" />}
-                bg="bg-warning-50"
-                value={ratingDisplay}
-                label="Note"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Lien gains */}
-        <button
-          onClick={() => go({ name: 'earnings' })}
-          className="w-full bg-white rounded-3xl p-4 shadow-card flex items-center gap-3 tap border border-ink-100"
-        >
-          <div className="w-11 h-11 rounded-2xl bg-success-50 grid place-items-center shrink-0">
-            <TrendingUp size={21} className="text-success-600" />
+        <div className="bg-white rounded-3xl p-4 shadow-soft border border-ink-100">
+          <p className="font-bold text-ink-900 text-sm mb-4">Cette semaine</p>
+          <div className="grid grid-cols-3 gap-2">
+            <StatCell
+              icon={<Truck size={16} style={{ color: '#FF6100' }} />}
+              bg="rgba(255,97,0,0.1)"
+              value={String(earnings?.deliveries_today ?? 0)}
+              label="Auj."
+            />
+            <StatCell
+              icon={<Banknote size={16} className="text-success-600" />}
+              bg="#F0FDF4"
+              value={formatFCFA(earnings?.this_week ?? 0)}
+              label="Semaine"
+            />
+            <StatCell
+              icon={<Star size={16} className="text-warning-500" />}
+              bg="#FFFBEB"
+              value={ratingDisplay}
+              label="Note"
+            />
           </div>
-          <div className="flex-1 text-left">
-            <p className="font-bold text-ink-900 text-sm">Total cumulé</p>
-            <p className="text-success-600 font-extrabold text-base">{formatFCFA(earnings?.total_lifetime ?? 0)}</p>
-          </div>
-          <ChevronRight size={18} className="text-ink-300" />
-        </button>
+        </div>
       </div>
     </div>
   );
@@ -255,7 +276,7 @@ function StatCell({ icon, bg, value, label }: {
 }) {
   return (
     <div className="text-center">
-      <div className={cn('w-10 h-10 rounded-2xl grid place-items-center mx-auto mb-2', bg)}>
+      <div className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto mb-2" style={{ background: bg }}>
         {icon}
       </div>
       <p className="font-extrabold text-ink-900 text-base leading-tight">{value}</p>

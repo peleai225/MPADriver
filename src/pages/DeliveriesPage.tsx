@@ -81,19 +81,20 @@ export function DeliveriesPage() {
   };
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24" style={{ background: '#F8F6F5' }}>
       {/* Header */}
-      <div className="bg-ink-950 px-4 pt-safe pb-5 flex items-center justify-between">
+      <div className="px-4 pt-safe pb-5 flex items-center justify-between" style={{ background: '#1C1C1C' }}>
         <div>
-          <h1 className="text-white font-bold text-lg">Courses disponibles</h1>
-          <p className="text-ink-400 text-xs mt-0.5">
+          <h1 className="text-white font-extrabold text-xl">Courses disponibles</h1>
+          <p className="text-white/40 text-xs mt-0.5">
             {loading ? 'Chargement...' : `${deliveries.length} course${deliveries.length !== 1 ? 's' : ''} en attente`}
           </p>
         </div>
         <button
           onClick={() => load()}
           disabled={loading}
-          className="w-10 h-10 rounded-full bg-white/10 grid place-items-center tap disabled:opacity-50 hover:bg-white/20 transition-colors"
+          className="w-10 h-10 rounded-full flex items-center justify-center tap disabled:opacity-50"
+          style={{ background: 'rgba(255,255,255,0.1)' }}
         >
           <RefreshCw size={16} className={`text-white ${loading ? 'animate-spin' : ''}`} />
         </button>
@@ -104,7 +105,7 @@ export function DeliveriesPage() {
           [0, 1, 2].map(i => <div key={i} className="h-44 rounded-3xl skeleton" />)
         ) : deliveries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-20 h-20 rounded-full bg-ink-100 grid place-items-center mb-5">
+            <div className="w-20 h-20 rounded-full bg-ink-100 flex items-center justify-center mb-5">
               <PackageSearch size={32} className="text-ink-400" />
             </div>
             <p className="font-bold text-ink-900 text-base">Aucune course disponible</p>

@@ -18,9 +18,12 @@ export default {
         warning: { 50: '#FFFBEB', 500: '#F59E0B', 600: '#D97706', 700: '#92400E' },
         danger:  { 50: '#FEF2F2', 200: '#FECACA', 500: '#EF4444', 600: '#DC2626', 700: '#B91C1C' },
         info:    { 50: '#EFF6FF', 500: '#3B82F6', 600: '#2563EB', 700: '#1D4ED8' },
+        flame:   { DEFAULT: '#FF6100', dark: '#FF3301' },
+        paper:   '#F8F6F5',
+        charcoal: '#1C1C1C',
       },
       fontFamily: {
-        sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+        sans: ['"Montserrat"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.06)',

@@ -1,53 +1,84 @@
-import { LayoutDashboard, Truck, Wallet, User } from 'lucide-react';
+import { Home, Package, Navigation, Wallet, User } from 'lucide-react';
 import { useNav } from '../lib/nav';
 import { cn } from '../lib/utils';
 
-const TABS = [
-  { name: 'dashboard'  as const, icon: LayoutDashboard, label: 'Accueil' },
-  { name: 'deliveries' as const, icon: Truck,           label: 'Courses' },
-  { name: 'earnings'   as const, icon: Wallet,          label: 'Gains'   },
-  { name: 'profile'    as const, icon: User,            label: 'Profil'  },
-];
+function NavItem({ icon: Icon, label, name, active, onClick }: {
+  icon: React.ElementType;
+  label: string;
+  name: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-1 flex flex-col items-center justify-center gap-0.5 tap relative"
+    >
+      <Icon
+        size={22}
+        strokeWidth={active ? 2.5 : 1.7}
+        style={{ color: active ? '#FF6100' : '#888888' }}
+      />
+      <span
+        className="text-[10px] font-semibold"
+        style={{ color: active ? '#FF6100' : '#888888' }}
+      >
+        {label}
+      </span>
+      {active && (
+        <span
+          className="absolute bottom-0.5 w-1 h-1 rounded-full"
+          style={{ background: '#FF6100' }}
+        />
+      )}
+    </button>
+  );
+}
 
 export function BottomNav() {
   const { tab, go } = useNav();
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-50 safe-bottom">
-      <div className="bg-white/95 backdrop-blur-md border-t border-ink-100 shadow-[0_-4px_24px_rgba(0,0,0,.07)]">
-        <div className="max-w-md mx-auto flex px-2">
-          {TABS.map(t => {
-            const active = tab === t.name;
-            return (
-              <button
-                key={t.name}
-                onClick={() => go({ name: t.name })}
-                className="flex-1 flex flex-col items-center gap-0.5 py-2 tap relative"
-              >
-                {/* Pill indicateur actif */}
-                {active && (
-                  <span className="absolute top-1.5 inset-x-3 h-8 rounded-2xl bg-brand-50 -z-0 animate-fade-in" />
-                )}
-                <span className={cn(
-                  'relative z-10 w-6 h-6 flex items-center justify-center transition-transform duration-200',
-                  active && 'scale-110',
-                )}>
-                  <t.icon
-                    size={22}
-                    strokeWidth={active ? 2.5 : 1.7}
-                    className={cn('transition-colors', active ? 'text-brand-500' : 'text-ink-400')}
-                  />
-                </span>
-                <span className={cn(
-                  'relative z-10 text-[10px] font-semibold transition-colors',
-                  active ? 'text-brand-500' : 'text-ink-400',
-                )}>
-                  {t.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-ink-100 pb-safe z-50">
+      <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-2">
+        <NavItem
+          icon={Home}
+          label="Accueil"
+          name="dashboard"
+          active={tab === 'dashboard'}
+          onClick={() => go({ name: 'dashboard' })}
+        />
+        <NavItem
+          icon={Package}
+          label="Courses"
+          name="deliveries"
+          active={tab === 'deliveries'}
+          onClick={() => go({ name: 'deliveries' })}
+        />
+
+        {/* FAB center */}
+        <button
+          onClick={() => go({ name: 'active-delivery' })}
+          className="relative -mt-6 w-14 h-14 rounded-full flex items-center justify-center tap gradient-flame"
+          style={{ boxShadow: '0 8px 24px rgba(255,97,0,.45)' }}
+        >
+          <Navigation size={26} className="text-white" />
+        </button>
+
+        <NavItem
+          icon={Wallet}
+          label="Gains"
+          name="earnings"
+          active={tab === 'earnings'}
+          onClick={() => go({ name: 'earnings' })}
+        />
+        <NavItem
+          icon={User}
+          label="Profil"
+          name="profile"
+          active={tab === 'profile'}
+          onClick={() => go({ name: 'profile' })}
+        />
       </div>
     </nav>
   );
