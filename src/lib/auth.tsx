@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Driver } from './types';
-import { api, clearAuth, getDriver, getToken } from './api';
+import { api, clearAuth, getDriver, getToken, setAuth } from './api';
 
 interface AuthCtx {
   driver: Driver | null;
@@ -55,11 +55,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     const d = await api.me();
+    // Persister dans localStorage pour survivre au reload
+    if (getToken()) setAuth(getToken()!, d);
+    setDriver(d);
+  };
+
+  // setDriver persistant — met à jour React state ET localStorage
+  const persistDriver = (d: Driver) => {
+    if (getToken()) setAuth(getToken()!, d);
     setDriver(d);
   };
 
   return (
-    <Ctx.Provider value={{ driver, loading, login, logout, refresh, setDriver }}>
+    <Ctx.Provider value={{ driver, loading, login, logout, refresh, setDriver: persistDriver }}>
       {children}
     </Ctx.Provider>
   );

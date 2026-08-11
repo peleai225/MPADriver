@@ -54,7 +54,7 @@ export function ProfilePage() {
               style={{ background: 'linear-gradient(135deg, #FF3301, #FF6100)', border: '3px solid #FF6100' }}
             >
               {driver.photo_url
-                ? <img src={driver.photo_url} alt={driver.name} className="w-full h-full object-cover" />
+                ? <img src={`${driver.photo_url}?t=${Date.now()}`} alt={driver.name} className="w-full h-full object-cover" />
                 : <span className="text-white font-extrabold text-2xl">{driver.name[0].toUpperCase()}</span>
               }
             </div>
