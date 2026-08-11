@@ -4,12 +4,9 @@ import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
-import { cn } from '../lib/utils';
 import { compressImage } from '../lib/imageUtils';
 
+const ORANGE = '#FF6100';
 const CITIES = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
 const VEHICLES = [
   { value: 'moto',    label: 'Moto',    emoji: '🏍️' },
@@ -41,10 +38,9 @@ export function EditProfilePage() {
     if (vehicleType !== driver.vehicle_type) form.append('vehicle_type', vehicleType);
     if (vehiclePlate !== (driver.vehicle_plate ?? '')) form.append('vehicle_plate', vehiclePlate);
     if (photo) {
-      const compressedPhoto = await compressImage(photo, 800, 800, 0.8);
-      form.append('photo', compressedPhoto, compressedPhoto.name);
+      const compressed = await compressImage(photo, 800, 800, 0.8);
+      form.append('photo', compressed, compressed.name);
     }
-
     try {
       const updated = await api.updateProfile(form);
       setDriver(updated);
@@ -57,94 +53,167 @@ export function EditProfilePage() {
     }
   };
 
+  const avatarSrc = photo ? URL.createObjectURL(photo) : driver.photo_url ?? null;
+
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      {/* Header */}
-      <div className="bg-ink-950 px-4 pt-safe pb-4 flex items-center gap-3">
-        <button onClick={pop} className="w-9 h-9 rounded-full bg-white/10 grid place-items-center tap">
+    <div className="min-h-screen flex flex-col" style={{ background: '#F5F0EB' }}>
+
+      {/* ── HEADER ── */}
+      <div
+        className="flex items-center gap-3 px-5 pb-4 safe-top pt-4"
+        style={{ background: '#1C1C1C' }}
+      >
+        <button
+          onClick={pop}
+          className="w-10 h-10 rounded-full flex items-center justify-center tap shrink-0"
+          style={{ background: 'rgba(255,255,255,0.1)' }}
+        >
           <ChevronLeft size={20} className="text-white" />
         </button>
-        <h1 className="text-white font-bold text-base">Modifier le profil</h1>
+        <div className="flex-1">
+          <h1 className="text-white font-extrabold text-lg">Modifier le profil</h1>
+          <p className="text-white/40 text-xs">Mettez vos informations à jour</p>
+        </div>
       </div>
 
-      <div className="flex-1 px-4 py-5 space-y-5 pb-32">
-        {/* Photo */}
-        <div className="flex flex-col items-center gap-3">
-          <label className="cursor-pointer tap">
-            <input type="file" accept="image/*" capture="user" className="hidden"
-              onChange={e => e.target.files?.[0] && setPhoto(e.target.files[0])} />
-            <div className="relative">
-              <div className="w-20 h-20 rounded-3xl bg-brand-500 grid place-items-center shadow-pop overflow-hidden">
-                {photo
-                  ? <img src={URL.createObjectURL(photo)} className="w-full h-full object-cover" />
-                  : driver.photo_url
-                  ? <img src={driver.photo_url} alt={driver.name} className="w-full h-full object-cover" />
-                  : <span className="text-white font-extrabold text-3xl">{driver.name[0].toUpperCase()}</span>
-                }
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-brand-500 border-2 border-white grid place-items-center shadow-sm">
-                <Camera size={13} className="text-white" />
-              </div>
+      {/* ── CONTENU ── */}
+      <div className="flex-1 overflow-y-auto px-5 pb-32">
+
+        {/* AVATAR */}
+        <div className="flex flex-col items-center py-8">
+          <label className="cursor-pointer tap relative">
+            <input
+              type="file" accept="image/*" capture="user" className="hidden"
+              onChange={e => e.target.files?.[0] && setPhoto(e.target.files[0])}
+            />
+            <div
+              className="w-24 h-24 rounded-3xl overflow-hidden flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, #FF3301, ${ORANGE})`, boxShadow: '0 8px 24px rgba(255,97,0,.35)' }}
+            >
+              {avatarSrc
+                ? <img src={avatarSrc} alt="avatar" className="w-full h-full object-cover" />
+                : <span className="text-white font-extrabold text-4xl">{driver.name[0].toUpperCase()}</span>}
+            </div>
+            {/* Badge caméra */}
+            <div
+              className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-md"
+              style={{ background: ORANGE }}
+            >
+              <Camera size={14} className="text-white" />
             </div>
           </label>
-          {photo && (
-            <div className="flex items-center gap-1.5 text-xs text-success-600 font-semibold">
+
+          {photo ? (
+            <div className="flex items-center gap-1.5 mt-3 text-xs font-semibold" style={{ color: '#22C55E' }}>
               <CheckCircle2 size={13} /> Nouvelle photo sélectionnée
             </div>
+          ) : (
+            <p className="mt-3 text-xs" style={{ color: '#A0A0A0' }}>Appuyez pour changer la photo</p>
           )}
-          <p className="text-xs text-ink-400">Appuyez pour changer la photo</p>
         </div>
 
-        {/* Nom */}
-        <div><Label htmlFor="name">Nom complet *</Label>
-          <Input id="name" value={name} onChange={e => setName(e.target.value)} />
-        </div>
+        <div className="space-y-4">
 
-        {/* Ville */}
-        <div>
-          <Label htmlFor="city">Ville de base *</Label>
-          <select id="city" value={city} onChange={e => setCity(e.target.value)}
-            className="w-full h-12 rounded-2xl px-4 text-sm border border-ink-200 bg-white text-ink-900 focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm">
-            {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
+          {/* NOM */}
+          <FieldGroup label="Nom complet *">
+            <input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Kouamé Brou"
+              className="flex-1 bg-transparent text-sm font-medium outline-none"
+              style={{ color: '#1C1C1C' }}
+            />
+          </FieldGroup>
 
-        {/* Zone */}
-        <div><Label htmlFor="zone">Commune / Zone</Label>
-          <Input id="zone" value={zone} onChange={e => setZone(e.target.value)} placeholder="Ex: Cocody, Plateau..." />
-        </div>
+          {/* VILLE */}
+          <FieldGroup label="Ville de base *">
+            <select
+              value={city}
+              onChange={e => setCity(e.target.value)}
+              className="flex-1 bg-transparent text-sm font-medium outline-none"
+              style={{ color: '#1C1C1C' }}
+            >
+              {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </FieldGroup>
 
-        {/* Véhicule */}
-        <div>
-          <Label>Type de véhicule *</Label>
-          <div className="grid grid-cols-3 gap-2 mt-1">
-            {VEHICLES.map(v => (
-              <button key={v.value} type="button" onClick={() => setVehicleType(v.value as 'moto' | 'velo' | 'voiture')}
-                className={cn(
-                  'py-3.5 rounded-2xl text-sm font-semibold border-2 tap flex flex-col items-center gap-1.5 transition-all',
-                  vehicleType === v.value ? 'border-brand-500 bg-brand-50 text-brand-600' : 'border-ink-200 text-ink-500',
-                )}>
-                <span className="text-2xl">{v.emoji}</span>{v.label}
-              </button>
-            ))}
+          {/* ZONE */}
+          <FieldGroup label="Commune / Zone">
+            <input
+              value={zone}
+              onChange={e => setZone(e.target.value)}
+              placeholder="Ex: Cocody, Plateau..."
+              className="flex-1 bg-transparent text-sm font-medium outline-none"
+              style={{ color: '#1C1C1C' }}
+            />
+          </FieldGroup>
+
+          {/* VÉHICULE */}
+          <div>
+            <p className="text-xs font-semibold mb-2" style={{ color: '#717171' }}>Type de véhicule *</p>
+            <div className="grid grid-cols-3 gap-2">
+              {VEHICLES.map(v => (
+                <button
+                  key={v.value}
+                  onClick={() => setVehicleType(v.value as 'moto' | 'velo' | 'voiture')}
+                  className="flex flex-col items-center gap-1.5 py-4 rounded-2xl border-2 tap transition-all"
+                  style={{
+                    background: vehicleType === v.value ? 'rgba(255,97,0,0.06)' : '#FFFFFF',
+                    borderColor: vehicleType === v.value ? ORANGE : '#E4E4E4',
+                  }}
+                >
+                  <span className="text-3xl">{v.emoji}</span>
+                  <span className="text-xs font-bold" style={{ color: vehicleType === v.value ? ORANGE : '#717171' }}>
+                    {v.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Plaque */}
-        <div><Label htmlFor="plate">Plaque d'immatriculation</Label>
-          <Input id="plate" value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)} placeholder="AA-123-CI" className="uppercase" />
+          {/* PLAQUE */}
+          <FieldGroup label="Plaque d'immatriculation">
+            <input
+              value={vehiclePlate}
+              onChange={e => setVehiclePlate(e.target.value.toUpperCase())}
+              placeholder="AA-123-CI"
+              className="flex-1 bg-transparent text-sm font-medium outline-none uppercase"
+              style={{ color: '#1C1C1C' }}
+            />
+          </FieldGroup>
+
         </div>
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 p-4 bg-white border-t border-ink-100 safe-bottom">
-        <Button onClick={handleSubmit} disabled={loading} className="w-full h-13">
+      {/* ── CTA ── */}
+      <div
+        className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom"
+        style={{ background: 'rgba(255,255,255,0.97)', borderTop: '1px solid #F1F1F1' }}
+      >
+        <button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full h-14 rounded-full font-bold text-white text-base tap disabled:opacity-60 flex items-center justify-center gap-2 gradient-flame"
+          style={{ boxShadow: '0 8px 24px rgba(255,97,0,.4)' }}
+        >
           {loading ? (
-            <span className="flex items-center gap-2">
-              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-              Enregistrement...
-            </span>
+            <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
           ) : 'Enregistrer les modifications'}
-        </Button>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-xs font-semibold mb-1.5" style={{ color: '#717171' }}>{label}</p>
+      <div
+        className="flex items-center gap-3 px-4 h-14 rounded-2xl border"
+        style={{ background: '#FFFFFF', borderColor: '#E4E4E4' }}
+      >
+        {children}
       </div>
     </div>
   );
