@@ -29,12 +29,15 @@ export function DashboardPage() {
     } catch {}
   }, [show]);
 
-  // Chargement initial
+  // Chargement initial + polling de secours toutes les 15s si Pusher indisponible
   useEffect(() => {
     api.getEarnings().then(setEarnings).catch(() => {});
     api.getActiveDelivery().then(setActiveDelivery).catch(() => {});
     loadPending(true);
     requestNotificationPermission();
+
+    const pollInterval = setInterval(() => loadPending(true), 15000);
+    return () => clearInterval(pollInterval);
   }, [loadPending]);
 
   // Souscriptions Pusher

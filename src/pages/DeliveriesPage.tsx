@@ -108,8 +108,17 @@ export function DeliveriesPage() {
             <div className="w-20 h-20 rounded-full bg-ink-100 flex items-center justify-center mb-5">
               <PackageSearch size={32} className="text-ink-400" />
             </div>
-            <p className="font-bold text-ink-900 text-base">Aucune course disponible</p>
-            <p className="text-ink-400 text-sm mt-1.5 max-w-xs">Vous serez alerté dès qu'une course arrive.</p>
+            {driver?.is_available === false ? (
+              <>
+                <p className="font-bold text-ink-900 text-base">Vous êtes hors ligne</p>
+                <p className="text-ink-400 text-sm mt-1.5 max-w-xs">Passez en ligne pour recevoir des courses.</p>
+              </>
+            ) : (
+              <>
+                <p className="font-bold text-ink-900 text-base">Aucune course disponible</p>
+                <p className="text-ink-400 text-sm mt-1.5 max-w-xs">Vous serez alerté dès qu'une course arrive.</p>
+              </>
+            )}
           </div>
         ) : (
           deliveries.map(d => (

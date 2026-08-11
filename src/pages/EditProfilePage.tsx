@@ -8,6 +8,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { cn } from '../lib/utils';
+import { compressImage } from '../lib/imageUtils';
 
 const CITIES = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
 const VEHICLES = [
@@ -39,7 +40,10 @@ export function EditProfilePage() {
     if (zone !== (driver.zone ?? '')) form.append('zone', zone);
     if (vehicleType !== driver.vehicle_type) form.append('vehicle_type', vehicleType);
     if (vehiclePlate !== (driver.vehicle_plate ?? '')) form.append('vehicle_plate', vehiclePlate);
-    if (photo) form.append('photo', photo);
+    if (photo) {
+      const compressedPhoto = await compressImage(photo, 800, 800, 0.8);
+      form.append('photo', compressedPhoto, compressedPhoto.name);
+    }
 
     try {
       const updated = await api.updateProfile(form);

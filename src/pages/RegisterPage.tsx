@@ -7,6 +7,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { cn } from '../lib/utils';
+import { compressImage } from '../lib/imageUtils';
 
 const CITIES = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
 const VEHICLES = [
@@ -50,6 +51,11 @@ export function RegisterPage() {
   const handleSubmit = async () => {
     if (!cniPhoto || !licensePhoto || !vehiclePhoto) { show('Uploadez les 3 photos requises.', 'error'); return; }
     setLoading(true);
+    const [compressedCni, compressedLicense, compressedVehicle] = await Promise.all([
+      compressImage(cniPhoto, 800, 800, 0.8),
+      compressImage(licensePhoto, 800, 800, 0.8),
+      compressImage(vehiclePhoto, 800, 800, 0.8),
+    ]);
     const form = new FormData();
     form.append('name', name);
     form.append('phone', phone);
@@ -59,9 +65,9 @@ export function RegisterPage() {
     form.append('vehicle_type', vehicleType);
     form.append('vehicle_plate', vehiclePlate);
     form.append('cni_number', cniNumber);
-    form.append('cni_photo', cniPhoto);
-    form.append('license_photo', licensePhoto);
-    form.append('vehicle_photo', vehiclePhoto);
+    form.append('cni_photo', compressedCni, compressedCni.name);
+    form.append('license_photo', compressedLicense, compressedLicense.name);
+    form.append('vehicle_photo', compressedVehicle, compressedVehicle.name);
     try {
       await api.register(form);
       go({ name: 'pending' });
