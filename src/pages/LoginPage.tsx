@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
@@ -34,105 +34,124 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#1C1C1C' }}>
+    <div className="min-h-screen flex flex-col overflow-hidden" style={{ background: '#1C1C1C' }}>
 
-      {/* Zone logo — fond sombre haut */}
-      <div className="flex flex-col items-center justify-center pt-16 pb-12 px-6 safe-top">
-        {/* Logo officiel sur fond blanc arrondi */}
-        <div className="bg-white rounded-3xl px-8 py-4 shadow-pop mb-6 animate-scale-in">
-          <img src="/logo.png" alt="MENUPRO Livraison" className="h-16 w-auto object-contain" />
+      {/* ── HERO (60%) ── */}
+      <div className="relative flex-none h-[55vh] flex flex-col justify-end px-6 pb-10 safe-top overflow-hidden">
+
+        {/* Bulles déco */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-6 right-4 w-32 h-32 rounded-full opacity-25"
+            style={{ background: 'radial-gradient(circle, #FF6100, #FF3301)' }} />
+          <div className="absolute top-20 right-24 w-16 h-16 rounded-full opacity-15"
+            style={{ background: 'radial-gradient(circle, #FF6100, #FF3301)' }} />
+          <div className="absolute top-10 left-1/2 w-10 h-10 rounded-full opacity-20"
+            style={{ background: 'radial-gradient(circle, #FF8C00, #FF3301)' }} />
+          <div className="absolute bottom-16 right-8 w-20 h-20 rounded-full opacity-10"
+            style={{ background: 'radial-gradient(circle, #FF6100, transparent)' }} />
+          <div className="absolute top-1/3 left-6 w-8 h-8 rounded-full opacity-15"
+            style={{ background: 'radial-gradient(circle, #FF6100, #FF3301)' }} />
         </div>
-        <p className="text-white/50 text-sm font-medium tracking-wide">Espace Livreur</p>
+
+        {/* Titre */}
+        <div className="relative">
+          <p className="text-white/60 text-base font-medium mb-1">Bonjour,</p>
+          <h1 className="text-white font-extrabold text-4xl leading-tight">
+            Connectez-<br/>vous !
+          </h1>
+        </div>
       </div>
 
-      {/* Card formulaire — blanc, coins ronds en haut */}
+      {/* ── CARD BLANCHE (remonte sur le hero) ── */}
       <div
-        className="flex-1 rounded-t-[2rem] px-6 pt-8 pb-10 flex flex-col"
-        style={{ background: '#FFFFFF' }}
+        className="flex-1 rounded-t-[2.5rem] -mt-6 px-6 pt-8 pb-10 flex flex-col"
+        style={{ background: '#FFFFFF', boxShadow: '0 -8px 40px rgba(0,0,0,0.15)' }}
       >
-        <h2 className="font-extrabold text-2xl mb-1" style={{ color: '#1C1C1C' }}>Connexion</h2>
-        <p className="text-sm mb-8" style={{ color: '#A0A0A0' }}>
-          Bienvenue ! Connectez-vous pour continuer.
-        </p>
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <img src="/logo.png" alt="MENUPRO Livraison" className="h-12 object-contain" />
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3 flex-1">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-6">
+
           {/* Champ téléphone */}
-          <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: '#717171' }}>
-              Numéro de téléphone
-            </label>
-            <div
-              className="flex items-center gap-3 rounded-2xl px-4 h-14 border transition-all"
-              style={{ background: '#F8F8F8', borderColor: phone ? '#FF6100' : '#E4E4E4' }}
-            >
-              <Phone size={18} style={{ color: '#A0A0A0' }} className="shrink-0" />
-              <input
-                type="tel"
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                placeholder="0701234567"
-                className="flex-1 bg-transparent text-sm font-medium outline-none"
-                style={{ color: '#1C1C1C' }}
-              />
-            </div>
-          </div>
+          <UnderlineField
+            label="Téléphone"
+            value={phone}
+            placeholder="0701234567"
+            type="tel"
+            onChange={setPhone}
+          />
 
           {/* Champ mot de passe */}
-          <div>
-            <label className="block text-xs font-semibold mb-1.5" style={{ color: '#717171' }}>
-              Mot de passe
-            </label>
-            <div
-              className="flex items-center gap-3 rounded-2xl px-4 h-14 border transition-all"
-              style={{ background: '#F8F8F8', borderColor: password ? '#FF6100' : '#E4E4E4' }}
-            >
-              <Lock size={18} style={{ color: '#A0A0A0' }} className="shrink-0" />
-              <input
-                type={showPwd ? 'text' : 'password'}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="flex-1 bg-transparent text-sm font-medium outline-none"
-                style={{ color: '#1C1C1C' }}
-              />
-              <button type="button" onClick={() => setShowPwd(v => !v)} className="tap shrink-0">
+          <UnderlineField
+            label="Mot de passe"
+            value={password}
+            placeholder="••••••••"
+            type={showPwd ? 'text' : 'password'}
+            onChange={setPassword}
+            right={
+              <button type="button" onClick={() => setShowPwd(v => !v)} className="tap">
                 {showPwd
                   ? <EyeOff size={18} style={{ color: '#A0A0A0' }} />
                   : <Eye size={18} style={{ color: '#A0A0A0' }} />}
               </button>
-            </div>
-          </div>
+            }
+          />
 
-          {/* Spacer */}
-          <div className="flex-1 min-h-4" />
+          <div className="flex-1" />
 
-          {/* Bouton connexion */}
+          {/* Bouton */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full h-14 rounded-2xl font-bold text-white text-base tap disabled:opacity-60 flex items-center justify-center gap-2 gradient-flame shadow-pop"
+            className="w-full h-14 rounded-full font-bold text-white text-base tap disabled:opacity-60 flex items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg, #FF3301, #FF6100)', boxShadow: '0 8px 24px rgba(255,97,0,.4)' }}
           >
             {loading ? (
-              <>
-                <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                Connexion en cours...
-              </>
-            ) : 'Se connecter →'}
+              <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            ) : 'SE CONNECTER'}
           </button>
 
           {/* Lien inscription */}
-          <p className="text-center text-sm mt-4" style={{ color: '#A0A0A0' }}>
+          <p className="text-center text-sm" style={{ color: '#A0A0A0' }}>
             Pas encore livreur ?{' '}
             <button
               type="button"
               onClick={() => push({ name: 'register' })}
               className="font-bold tap"
-              style={{ color: '#FF6100' }}
+              style={{ color: '#FF3301' }}
             >
-              Rejoindre MENUPRO
+              S'inscrire
             </button>
           </p>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function UnderlineField({ label, value, placeholder, type = 'text', onChange, right }: {
+  label: string;
+  value: string;
+  placeholder: string;
+  type?: string;
+  onChange: (v: string) => void;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <p className="text-sm font-bold mb-2" style={{ color: '#1C1C1C' }}>{label}</p>
+      <div className="flex items-center gap-2 pb-2" style={{ borderBottom: '1.5px solid #E4E4E4' }}>
+        <input
+          type={type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className="flex-1 bg-transparent text-sm outline-none"
+          style={{ color: '#717171' }}
+        />
+        {right ?? (value && <span style={{ color: '#FF6100' }}>✓</span>)}
       </div>
     </div>
   );
