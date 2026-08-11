@@ -75,7 +75,7 @@ export function ProfilePage() {
                 style={{ background: 'rgba(255,255,255,0.25)', border: '2px solid rgba(255,255,255,0.4)' }}
               >
                 {driver.photo_url
-                  ? <img src={driver.photo_url} alt={driver.name} className="w-full h-full object-cover" />
+                  ? <img src={`${driver.photo_url}?v=${driver.id}`} alt={driver.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                   : <span className="text-white font-extrabold text-3xl">{driver.name[0].toUpperCase()}</span>}
               </div>
               <div
