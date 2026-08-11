@@ -1,67 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Wallet, Clock, ChevronDown, TrendingUp } from 'lucide-react';
+import { Wallet, ChevronDown, Bell, Clock } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../lib/toast';
 import { useAuth } from '../lib/auth';
 import { formatFCFA, formatDate } from '../lib/format';
 import type { EarningsSummary, Earning } from '../lib/types';
-import { Button } from '../components/ui/button';
-import { Label } from '../components/ui/label';
-import { Input } from '../components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetCloseButton } from '../components/ui/sheet';
 import { Separator } from '../components/ui/separator';
-import { cn } from '../lib/utils';
+import { Label } from '../components/ui/label';
+import { Input } from '../components/ui/input';
 
-function RemittanceForm({ debt, onSuccess, onClose }: { debt: any; onSuccess: () => void; onClose: () => void }) {
-  const { show } = useToast();
-  const [method, setMethod] = useState('wave');
-  const [waveRef, setWaveRef] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async () => {
-    setLoading(true);
-    try {
-      await api.declareCashRemittance({
-        debt_id: debt.id,
-        amount_xof: debt.amount_xof,
-        method,
-        wave_reference: waveRef || undefined,
-      });
-      onSuccess();
-    } catch (e: any) {
-      show(e.message || 'Erreur', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="space-y-3">
-      <div>
-        <label className="text-sm font-medium">Moyen de paiement</label>
-        <select value={method} onChange={e => setMethod(e.target.value)} className="w-full mt-1 px-4 py-3 border rounded-xl">
-          <option value="wave">Wave</option>
-          <option value="orange_money">Orange Money</option>
-          <option value="mtn_money">MTN MoMo</option>
-          <option value="moov_money">Moov Money</option>
-          <option value="cash">Cash (en main propre)</option>
-        </select>
-      </div>
-      {method !== 'cash' && (
-        <div>
-          <label className="text-sm font-medium">Référence transaction (optionnel)</label>
-          <input value={waveRef} onChange={e => setWaveRef(e.target.value)} placeholder="Ex: W123456789" className="w-full mt-1 px-4 py-3 border rounded-xl" />
-        </div>
-      )}
-      <div className="flex gap-2">
-        <button onClick={onClose} className="flex-1 py-3 border rounded-xl text-sm font-semibold">Annuler</button>
-        <button onClick={submit} disabled={loading} className="flex-1 py-3 bg-orange-500 text-white rounded-xl text-sm font-bold disabled:opacity-50">
-          {loading ? 'Envoi...' : 'Confirmer'}
-        </button>
-      </div>
-    </div>
-  );
-}
+const BG = '#F5F0EB';
+const ORANGE = '#FF6100';
 
 export function EarningsPage() {
   const { driver } = useAuth();
@@ -75,15 +25,16 @@ export function EarningsPage() {
   const [payoutAmount, setPayoutAmount] = useState('');
   const [payoutPhone, setPayoutPhone] = useState(driver?.phone ?? '');
   const [payoutLoading, setPayoutLoading] = useState(false);
-  const [cashBalance, setCashBalance] = useState<{total_owed_xof: number; debts: any[]} | null>(null);
-  const [showRemittanceSheet, setShowRemittanceSheet] = useState(false);
+  const [cashBalance, setCashBalance] = useState<{ total_owed_xof: number; debts: any[] } | null>(null);
+  const [showRemittance, setShowRemittance] = useState(false);
   const [selectedDebt, setSelectedDebt] = useState<any>(null);
+  const [remitMethod, setRemitMethod] = useState('wave');
+  const [remitRef, setRemitRef] = useState('');
+  const [remitLoading, setRemitLoading] = useState(false);
 
   useEffect(() => {
     api.getEarnings().then(setSummary).catch(() => {});
-    api.getEarningsHistory(1)
-      .then(r => { setHistory(r.data); setLastPage(r.meta.last_page); setLoading(false); })
-      .catch(() => setLoading(false));
+    api.getEarningsHistory(1).then(r => { setHistory(r.data); setLastPage(r.meta.last_page); setLoading(false); }).catch(() => setLoading(false));
     api.getCashBalance().then(setCashBalance).catch(() => {});
   }, []);
 
@@ -102,164 +53,171 @@ export function EarningsPage() {
     try {
       await api.requestPayout(amount, payoutPhone);
       show('Demande de virement envoyée !', 'success');
-      setShowPayout(false);
-      setPayoutAmount('');
+      setShowPayout(false); setPayoutAmount('');
       api.getEarnings().then(setSummary).catch(() => {});
     } catch (err: any) {
       show(err.message || 'Erreur.', 'error');
-    } finally {
-      setPayoutLoading(false);
-    }
+    } finally { setPayoutLoading(false); }
   };
 
-  const stats = [
-    { label: "Aujourd'hui",  value: summary?.today ?? 0 },
-    { label: 'Cette semaine', value: summary?.this_week ?? 0 },
-    { label: 'Ce mois',       value: summary?.this_month ?? 0 },
-    { label: 'Total cumulé',  value: summary?.total_lifetime ?? 0 },
-  ];
+  const handleRemit = async () => {
+    if (!selectedDebt) return;
+    setRemitLoading(true);
+    try {
+      await api.declareCashRemittance({ debt_id: selectedDebt.id, amount_xof: selectedDebt.amount_xof, method: remitMethod, wave_reference: remitRef || undefined });
+      show('Reversement déclaré !', 'success');
+      setShowRemittance(false);
+      api.getCashBalance().then(setCashBalance).catch(() => {});
+    } catch (e: any) {
+      show(e.message || 'Erreur', 'error');
+    } finally { setRemitLoading(false); }
+  };
 
   return (
-    <div className="min-h-screen pb-24">
-      {/* Header */}
-      <div className="px-4 pt-safe pb-6" style={{ background: '#1C1C1C' }}>
-        <div className="flex items-center gap-2 mb-5">
-          <TrendingUp size={18} style={{ color: '#FF6100' }} />
-          <h1 className="text-white font-bold text-lg">Mes gains</h1>
-        </div>
+    <div className="min-h-screen pb-28" style={{ background: BG }}>
 
-        {/* Solde hero */}
-        <div className="relative rounded-3xl p-5 text-center overflow-hidden mb-4" style={{ background: 'linear-gradient(135deg, #FF3301, #FF6100)' }}>
-          <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full bg-white/10 pointer-events-none" />
-          <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-white/5 pointer-events-none" />
+      {/* ── HEADER ── */}
+      <div className="px-5 pt-safe pt-5 pb-2 flex items-start justify-between">
+        <div>
+          <h1 className="font-extrabold text-3xl leading-tight" style={{ color: '#1C1C1C' }}>Gains</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#A0A0A0' }}>Votre tableau de bord financier</p>
+        </div>
+        <div className="relative mt-1">
+          <div className="w-11 h-11 rounded-full flex items-center justify-center tap" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+            <Bell size={20} style={{ color: '#1C1C1C' }} />
+          </div>
+          <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ background: ORANGE }} />
+        </div>
+      </div>
+
+      <div className="px-5 mt-3 space-y-3">
+
+        {/* ── HERO SOLDE ── */}
+        <div
+          className="rounded-3xl p-5 overflow-hidden relative"
+          style={{ background: `linear-gradient(135deg, #FF3301, ${ORANGE})`, boxShadow: '0 8px 32px rgba(255,97,0,.35)' }}
+        >
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none" style={{ background: 'rgba(255,255,255,0.1)' }} />
+          <div className="absolute bottom-0 right-0 opacity-10"><Wallet size={80} className="text-white" /></div>
+
           <p className="text-white/70 text-xs mb-1 relative">Solde disponible</p>
           <p className="text-white font-extrabold text-4xl relative">{formatFCFA(summary?.balance_available ?? 0)}</p>
-          <p className="text-white/60 text-xs mt-1 mb-4 relative">
-            {summary?.deliveries_total ?? 0} livraison{(summary?.deliveries_total ?? 0) !== 1 ? 's' : ''} totales
-          </p>
-          <Button
+          <p className="text-white/50 text-xs mt-1 relative">{summary?.deliveries_total ?? 0} livraison{(summary?.deliveries_total ?? 0) !== 1 ? 's' : ''} au total</p>
+
+          <button
             onClick={() => setShowPayout(true)}
             disabled={!summary || summary.balance_available < 500}
-            variant="dark"
-            size="pill"
-            className="relative border border-white/20"
+            className="mt-4 relative inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold tap disabled:opacity-40"
+            style={{ background: 'rgba(255,255,255,0.2)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.3)' }}
           >
             💸 Demander un virement Wave
-          </Button>
+          </button>
         </div>
 
-        {/* Stats grid */}
+        {/* ── STATS GRID ── */}
         <div className="grid grid-cols-2 gap-2">
-          {stats.map(s => (
-            <div key={s.label} className="rounded-2xl p-3" style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.12)' }}>
-              <p className="text-white/50 text-xs">{s.label}</p>
-              <p className="text-white font-bold text-sm mt-0.5">{formatFCFA(s.value)}</p>
+          {[
+            { label: "Aujourd'hui", value: summary?.today ?? 0, icon: '📅' },
+            { label: 'Cette semaine', value: summary?.this_week ?? 0, icon: '📆' },
+            { label: 'Ce mois', value: summary?.this_month ?? 0, icon: '🗓️' },
+            { label: 'Total cumulé', value: summary?.total_lifetime ?? 0, icon: '🏆' },
+          ].map(s => (
+            <div key={s.label} className="rounded-2xl p-3.5" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #EEEEEE' }}>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-sm">{s.icon}</span>
+                <p className="text-xs" style={{ color: '#A0A0A0' }}>{s.label}</p>
+              </div>
+              <p className="font-extrabold text-lg leading-tight" style={{ color: '#1C1C1C' }}>{formatFCFA(s.value)}</p>
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Dettes cash */}
-      {cashBalance && cashBalance.total_owed_xof > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mx-4 mt-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-amber-900">Argent à reverser</h3>
-            <span className="font-black text-amber-700 text-lg">
-              {cashBalance.total_owed_xof.toLocaleString('fr-FR')} F
-            </span>
-          </div>
-          <div className="space-y-2">
-            {cashBalance.debts.map((debt: any) => (
-              <div key={debt.id} className="bg-white rounded-xl p-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold">{debt.restaurant_name}</p>
-                  <p className="text-xs text-neutral-500">Cmd {debt.order_ref}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-sm">{debt.amount_xof.toLocaleString('fr-FR')} F</p>
-                  <button
-                    onClick={() => { setSelectedDebt(debt); setShowRemittanceSheet(true); }}
-                    className="text-xs text-orange-600 font-semibold mt-0.5"
-                  >
-                    Déclarer versement
-                  </button>
-                </div>
+        {/* ── DETTES CASH ── */}
+        {cashBalance && cashBalance.total_owed_xof > 0 && (
+          <div className="rounded-3xl p-4" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">⚠️</span>
+                <p className="font-bold text-sm" style={{ color: '#92400E' }}>Argent à reverser</p>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Historique */}
-      <div className="px-4 mt-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Clock size={15} className="text-ink-400" />
-          <h2 className="font-bold text-ink-900">Historique des gains</h2>
-        </div>
-
-        {loading ? (
-          [0, 1, 2].map(i => <div key={i} className="h-16 rounded-2xl skeleton mb-2" />)
-        ) : history.length === 0 ? (
-          <div className="text-center py-12 text-ink-400">
-            <Wallet size={32} className="mx-auto mb-3 opacity-40" />
-            <p className="text-sm">Aucun gain pour le moment.</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {history.map(e => (
-              <div key={e.id} className="bg-white rounded-2xl shadow-soft p-3.5 flex items-center gap-3">
-                <div className={cn(
-                  'w-10 h-10 rounded-xl grid place-items-center shrink-0',
-                  e.status === 'paid' ? 'bg-success-50' : 'bg-brand-50',
-                )}>
-                  <Wallet size={17} className={e.status === 'paid' ? 'text-success-600' : 'text-brand-600'} />
+              <p className="font-extrabold text-lg" style={{ color: '#D97706' }}>{formatFCFA(cashBalance.total_owed_xof)}</p>
+            </div>
+            <div className="space-y-2">
+              {cashBalance.debts.map((debt: any) => (
+                <div key={debt.id} className="bg-white rounded-2xl p-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: '#1C1C1C' }}>{debt.restaurant_name}</p>
+                    <p className="text-xs" style={{ color: '#A0A0A0' }}>Cmd {debt.order_ref}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-sm" style={{ color: '#1C1C1C' }}>{formatFCFA(debt.amount_xof)}</p>
+                    <button onClick={() => { setSelectedDebt(debt); setShowRemittance(true); }} className="text-xs font-bold tap" style={{ color: ORANGE }}>
+                      Déclarer →
+                    </button>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-ink-900 text-sm">{e.order?.reference ?? `#${e.id}`}</p>
-                  <p className="text-ink-400 text-xs mt-0.5">{formatDate(e.created_at)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-success-600 text-sm">+{formatFCFA(e.net_amount)}</p>
-                  <span className={cn(
-                    'text-[10px] font-semibold px-1.5 py-0.5 rounded-full',
-                    e.status === 'paid' ? 'bg-success-50 text-success-700' : 'bg-brand-50 text-brand-700',
-                  )}>
-                    {e.status === 'paid' ? 'Viré' : 'Disponible'}
-                  </span>
-                </div>
-              </div>
-            ))}
-            {page < lastPage && (
-              <button onClick={loadMore} className="w-full py-3 text-sm text-brand-600 font-semibold tap flex items-center justify-center gap-1">
-                <ChevronDown size={16} /> Voir plus
-              </button>
-            )}
+              ))}
+            </div>
           </div>
         )}
+
+        {/* ── HISTORIQUE ── */}
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-2.5 h-2.5 rounded-full" style={{ background: ORANGE }} />
+            <p className="font-extrabold text-base" style={{ color: '#1C1C1C' }}>Historique des gains</p>
+          </div>
+
+          {loading ? (
+            [0, 1, 2].map(i => <div key={i} className="h-16 rounded-2xl skeleton mb-2" />)
+          ) : history.length === 0 ? (
+            <div className="flex flex-col items-center py-10 text-center">
+              <span className="text-5xl mb-3">💰</span>
+              <p className="font-bold" style={{ color: '#1C1C1C' }}>Aucun gain pour le moment</p>
+              <p className="text-sm mt-1" style={{ color: '#A0A0A0' }}>Vos gains apparaîtront ici après chaque livraison.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {history.map(e => (
+                <div key={e.id} className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background: '#FFFFFF', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #EEEEEE' }}>
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
+                    style={{ background: e.status === 'paid' ? '#F0FDF4' : 'rgba(255,97,0,0.1)' }}
+                  >
+                    <Wallet size={18} style={{ color: e.status === 'paid' ? '#16A34A' : ORANGE }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm" style={{ color: '#1C1C1C' }}>{e.order?.reference ?? `#${e.id}`}</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Clock size={10} style={{ color: '#A0A0A0' }} />
+                      <p className="text-xs" style={{ color: '#A0A0A0' }}>{formatDate(e.created_at)}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-extrabold text-base" style={{ color: '#22C55E' }}>+{formatFCFA(e.net_amount)}</p>
+                    <span
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: e.status === 'paid' ? '#F0FDF4' : 'rgba(255,97,0,0.1)',
+                        color: e.status === 'paid' ? '#16A34A' : ORANGE,
+                      }}
+                    >
+                      {e.status === 'paid' ? 'Viré' : 'Disponible'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {page < lastPage && (
+                <button onClick={loadMore} className="w-full py-3 text-sm font-semibold tap flex items-center justify-center gap-1" style={{ color: ORANGE }}>
+                  <ChevronDown size={16} /> Voir plus
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Sheet Remittance */}
-      {showRemittanceSheet && selectedDebt && (
-        <div className="fixed inset-0 bg-black/60 flex items-end z-50">
-          <div className="bg-white w-full rounded-t-2xl p-6 space-y-4">
-            <h2 className="text-lg font-bold">Déclarer un reversement</h2>
-            <p className="text-sm text-neutral-500">
-              Pour : <strong>{selectedDebt.restaurant_name}</strong> — {selectedDebt.amount_xof.toLocaleString('fr-FR')} F
-            </p>
-            <RemittanceForm
-              debt={selectedDebt}
-              onSuccess={() => {
-                setShowRemittanceSheet(false);
-                api.getCashBalance().then(setCashBalance).catch(() => {});
-                show('Reversement déclaré. En attente de confirmation du restaurant.', 'success');
-              }}
-              onClose={() => setShowRemittanceSheet(false)}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Sheet Payout */}
+      {/* ── SHEET PAYOUT ── */}
       <Sheet open={showPayout} onOpenChange={setShowPayout}>
         <SheetContent>
           <SheetHeader>
@@ -267,49 +225,71 @@ export function EarningsPage() {
             <SheetCloseButton />
           </SheetHeader>
           <div className="px-6 pb-6 space-y-4">
-            <div className="bg-brand-50 rounded-2xl p-3 flex items-center gap-3">
+            <div className="rounded-2xl p-3 flex items-center gap-3" style={{ background: 'rgba(255,97,0,0.08)' }}>
               <span className="text-2xl">💳</span>
               <div>
-                <p className="text-xs font-semibold text-brand-700">Solde disponible</p>
-                <p className="font-bold text-brand-600 text-lg">{formatFCFA(summary?.balance_available ?? 0)}</p>
+                <p className="text-xs font-semibold" style={{ color: ORANGE }}>Solde disponible</p>
+                <p className="font-extrabold text-lg" style={{ color: '#1C1C1C' }}>{formatFCFA(summary?.balance_available ?? 0)}</p>
               </div>
             </div>
-
             <Separator />
-
             <div>
               <Label htmlFor="payout-amount">Montant (FCFA) *</Label>
-              <Input
-                id="payout-amount"
-                type="number"
-                value={payoutAmount}
-                onChange={e => setPayoutAmount(e.target.value)}
-                placeholder={`Min 500 FCFA`}
-              />
+              <Input id="payout-amount" type="number" value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} placeholder="Min 500 FCFA" />
             </div>
             <div>
               <Label htmlFor="payout-phone">Numéro Wave *</Label>
-              <Input
-                id="payout-phone"
-                type="tel"
-                value={payoutPhone}
-                onChange={e => setPayoutPhone(e.target.value)}
-                placeholder="0701234567"
-              />
+              <Input id="payout-phone" type="tel" value={payoutPhone} onChange={e => setPayoutPhone(e.target.value)} placeholder="0701234567" />
             </div>
-            <p className="text-xs text-ink-400">Maximum 3 virements par jour. Traitement sous 24h.</p>
-            <Button
+            <p className="text-xs" style={{ color: '#A0A0A0' }}>Maximum 3 virements par jour. Traitement sous 24h.</p>
+            <button
               onClick={handlePayout}
               disabled={payoutLoading}
-              className="w-full h-13"
+              className="w-full h-13 rounded-2xl text-white font-bold tap disabled:opacity-60 flex items-center justify-center gap-2 gradient-flame"
+              style={{ boxShadow: '0 8px 24px rgba(255,97,0,.3)' }}
             >
-              {payoutLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Envoi...
-                </span>
-              ) : 'Confirmer le virement'}
-            </Button>
+              {payoutLoading ? <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : 'Confirmer le virement'}
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* ── SHEET REMITTANCE ── */}
+      <Sheet open={showRemittance} onOpenChange={setShowRemittance}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Déclarer un reversement</SheetTitle>
+            <SheetCloseButton />
+          </SheetHeader>
+          <div className="px-6 pb-6 space-y-4">
+            {selectedDebt && (
+              <div className="rounded-2xl p-3" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
+                <p className="text-sm font-bold" style={{ color: '#92400E' }}>{selectedDebt.restaurant_name}</p>
+                <p className="font-extrabold text-lg" style={{ color: '#D97706' }}>{formatFCFA(selectedDebt.amount_xof)}</p>
+              </div>
+            )}
+            <div>
+              <Label>Moyen de paiement</Label>
+              <select value={remitMethod} onChange={e => setRemitMethod(e.target.value)} className="w-full mt-1 px-4 py-3 border border-ink-200 rounded-xl text-sm">
+                <option value="wave">Wave</option>
+                <option value="orange_money">Orange Money</option>
+                <option value="mtn_money">MTN MoMo</option>
+                <option value="cash">Cash (en main propre)</option>
+              </select>
+            </div>
+            {remitMethod !== 'cash' && (
+              <div>
+                <Label>Référence transaction</Label>
+                <Input value={remitRef} onChange={e => setRemitRef(e.target.value)} placeholder="Ex: W123456789" />
+              </div>
+            )}
+            <button
+              onClick={handleRemit}
+              disabled={remitLoading}
+              className="w-full h-13 rounded-2xl text-white font-bold tap disabled:opacity-60 gradient-flame"
+            >
+              {remitLoading ? '...' : 'Confirmer le reversement'}
+            </button>
           </div>
         </SheetContent>
       </Sheet>
