@@ -14,18 +14,43 @@ import { ProfilePage } from './pages/ProfilePage';
 import { EditProfilePage } from './pages/EditProfilePage';
 import { BottomNav } from './components/BottomNav';
 
+function SplashScreen() {
+  return (
+    <div
+      className="min-h-screen flex flex-col items-center justify-center"
+      style={{ background: '#1C1C1C' }}
+    >
+      {/* Logo centré */}
+      <div className="flex flex-col items-center gap-8 animate-fade-in">
+        <div className="bg-white rounded-3xl px-8 py-5 shadow-pop">
+          <img src="/logo.png" alt="MENUPRO Livraison" className="h-20 w-auto object-contain" />
+        </div>
+
+        {/* Tagline */}
+        <p className="text-white/40 text-sm font-medium tracking-wide">
+          Espace Livreur
+        </p>
+
+        {/* Spinner */}
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-flame animate-bounce" style={{ animationDelay: '0ms' }} />
+          <span className="w-2 h-2 rounded-full bg-flame animate-bounce" style={{ animationDelay: '150ms' }} />
+          <span className="w-2 h-2 rounded-full bg-flame animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+
+      {/* Version en bas */}
+      <p className="absolute bottom-8 text-white/20 text-xs">MENUPRO Livraison</p>
+    </div>
+  );
+}
+
 function Router() {
   const { driver, loading } = useAuth();
   const { stack } = useNav();
   const current = stack[stack.length - 1];
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ink-950">
-        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (loading) return <SplashScreen />;
 
   if (!driver) {
     if (current.name === 'register') return <RegisterPage />;
@@ -39,7 +64,7 @@ function Router() {
   const showBottomNav = !['login', 'register', 'pending', 'active-delivery', 'edit-profile'].includes(current.name);
 
   return (
-    <div className="min-h-screen bg-ink-50">
+    <div className="min-h-screen" style={{ background: '#F8F6F5' }}>
       <ErrorBoundary>
         {current.name === 'dashboard'       && <DashboardPage />}
         {current.name === 'deliveries'      && <DeliveriesPage />}

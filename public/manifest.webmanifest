@@ -1,7 +1,7 @@
 {
-  "name": "MenuPro Livraison",
-  "short_name": "MenuPro",
-  "description": "Application livreur MenuPro — gérez vos courses et vos gains",
+  "name": "MENUPRO Livraison",
+  "short_name": "MENUPRO",
+  "description": "Application livreur MENUPRO Livraison — gérez vos courses et vos gains",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
