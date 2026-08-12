@@ -80,7 +80,7 @@ export const api = {
   },
 
   async updateProfile(form: FormData): Promise<Driver> {
-    form.append('_method', 'PATCH');
+    form.append('_method', 'PUT');
     const r = await request<any>('/driver/auth/profile', { method: 'POST', body: form });
     return r.driver ?? r.data ?? r;
   },
@@ -143,7 +143,7 @@ export const api = {
   async requestPayout(amount: number, phone: string): Promise<void> {
     await request('/driver/earnings/payout', {
       method: 'POST',
-      body: JSON.stringify({ amount, payment_method: 'wave', phone }),
+      body: JSON.stringify({ amount, payment_method: 'wave', mobile: phone }),
     });
   },
 

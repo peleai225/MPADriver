@@ -33,11 +33,11 @@ export function EditProfilePage() {
   const handleSubmit = async () => {
     setLoading(true);
     const form = new FormData();
-    if (name !== driver.name) form.append('name', name);
-    if (city !== driver.city) form.append('city', city);
-    if (zone !== (driver.zone ?? '')) form.append('zone', zone);
-    if (vehicleType !== driver.vehicle_type) form.append('vehicle_type', vehicleType);
-    if (vehiclePlate !== (driver.vehicle_plate ?? '')) form.append('vehicle_plate', vehiclePlate);
+    form.append('name', name);
+    form.append('city', city);
+    form.append('zone', zone);
+    form.append('vehicle_type', vehicleType);
+    form.append('vehicle_plate', vehiclePlate);
     if (photo) {
       const compressed = await compressImage(photo, 800, 800, 0.8);
       form.append('photo', compressed, compressed.name);
