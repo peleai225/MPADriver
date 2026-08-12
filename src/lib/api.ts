@@ -28,22 +28,23 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   if (!isFormData) headers['Content-Type'] = 'application/json';
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
+  console.log(`[API] ${opts.method ?? 'GET'} ${path}`, isFormData ? '(FormData)' : opts.body ?? '');
+
   const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   let data: any = null;
   const text = await res.text();
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+
   if (!res.ok) {
+    console.error(`[API] ❌ ${res.status} ${path}`, data);
     let message = (data && (data.message || data.error)) || `HTTP ${res.status}`;
-    // Pour les 422 : extraire le premier message de validation
     if (res.status === 422 && data?.errors) {
+      console.error(`[API] Validation errors:`, data.errors);
       const firstField = Object.keys(data.errors)[0];
       if (firstField && data.errors[firstField]?.[0]) {
         message = data.errors[firstField][0];
       }
     }
-    // Token expiré en cours de session → purge uniquement si le token au moment
-    // de l'envoi est le même que celui en storage (évite d'effacer un token frais
-    // si la réponse d'un ancien /me arrive après un login)
     if (res.status === 401 && !path.includes('/auth/login') && token && token === getToken()) {
       clearAuth();
     }
@@ -52,6 +53,8 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
     err.data = data;
     throw err;
   }
+
+  console.log(`[API] ✓ ${res.status} ${path}`, data);
   return data as T;
 }
 
