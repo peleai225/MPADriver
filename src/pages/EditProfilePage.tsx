@@ -16,7 +16,7 @@ const VEHICLES = [
 ];
 
 export function EditProfilePage() {
-  const { driver, setDriver } = useAuth();
+  const { driver, setDriver, refresh } = useAuth();
   const { pop } = useNav();
   const { show } = useToast();
 
@@ -43,8 +43,9 @@ export function EditProfilePage() {
       form.append('photo', compressed, compressed.name);
     }
     try {
-      const updated = await api.updateProfile(form);
-      setDriver(updated);
+      const res = await api.updateProfile(form);
+      if (res) setDriver(res);
+      await refresh();
       show('Profil mis à jour !', 'success');
       pop();
     } catch (err: any) {

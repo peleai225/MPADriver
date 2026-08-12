@@ -70,7 +70,8 @@ export const api = {
   },
 
   async me(): Promise<Driver> {
-    return request<Driver>('/driver/auth/me');
+    const r = await request<any>('/driver/auth/me');
+    return r.driver ?? r.data ?? r;
   },
 
   async logout(): Promise<void> {
@@ -79,8 +80,8 @@ export const api = {
   },
 
   async updateProfile(form: FormData): Promise<Driver> {
-    const r = await request<{ driver: Driver }>('/driver/auth/profile', { method: 'PATCH', body: form });
-    return r.driver;
+    const r = await request<any>('/driver/auth/profile', { method: 'PATCH', body: form });
+    return r.driver ?? r.data ?? r;
   },
 
   async registerFcmToken(token: string): Promise<void> {
