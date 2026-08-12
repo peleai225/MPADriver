@@ -28,6 +28,7 @@ export function RegisterPage() {
   const [vehicleType, setVehicleType] = useState('moto');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [cniNumber, setCniNumber] = useState('');
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [cniPhoto, setCniPhoto] = useState<File | null>(null);
   const [licensePhoto, setLicensePhoto] = useState<File | null>(null);
   const [vehiclePhoto, setVehiclePhoto] = useState<File | null>(null);
@@ -50,11 +51,14 @@ export function RegisterPage() {
     }
     setLoading(true);
     try {
-      const [c1, c2, c3] = await Promise.all([
+      const compressions = [
         compressImage(cniPhoto, 800, 800, 0.8),
         compressImage(licensePhoto, 800, 800, 0.8),
         compressImage(vehiclePhoto, 800, 800, 0.8),
-      ]);
+      ];
+      if (profilePhoto) compressions.push(compressImage(profilePhoto, 600, 600, 0.85));
+      const compressed = await Promise.all(compressions);
+      const [c1, c2, c3] = compressed;
       const form = new FormData();
       form.append('name', name);
       form.append('phone', phone);
@@ -64,6 +68,7 @@ export function RegisterPage() {
       form.append('vehicle_type', vehicleType);
       form.append('vehicle_plate', vehiclePlate);
       form.append('cni_number', cniNumber);
+      if (profilePhoto) form.append('photo', compressed[3], compressed[3].name);
       form.append('cni_photo', c1, c1.name);
       form.append('license_photo', c2, c2.name);
       form.append('vehicle_photo', c3, c3.name);
@@ -219,6 +224,7 @@ export function RegisterPage() {
                 <p className="text-sm pb-2" style={{ color: '#A0A0A0' }}>
                   Photos claires requises. Vérification sous 24–48h par l'équipe MENUPRO Livraison.
                 </p>
+                <FileUpload label="Votre photo de profil" file={profilePhoto} onChange={setProfilePhoto} optional />
                 <FileUpload label="CNI (recto/verso)" file={cniPhoto} onChange={setCniPhoto} />
                 <FileUpload label="Permis de conduire" file={licensePhoto} onChange={setLicensePhoto} />
                 <FileUpload label="Photo du véhicule" file={vehiclePhoto} onChange={setVehiclePhoto} />
@@ -291,10 +297,11 @@ function UnderlineField({ label, value, placeholder, type = 'text', onChange, ri
   );
 }
 
-function FileUpload({ label, file, onChange }: {
+function FileUpload({ label, file, onChange, optional }: {
   label: string;
   file: File | null;
   onChange: (f: File) => void;
+  optional?: boolean;
 }) {
   return (
     <label
@@ -323,7 +330,7 @@ function FileUpload({ label, file, onChange }: {
       </div>
       <div className="min-w-0">
         <p className="text-sm font-bold truncate" style={{ color: file ? '#16A34A' : '#1C1C1C' }}>
-          {label}
+          {label}{optional && <span className="font-normal text-xs ml-1" style={{ color: '#A0A0A0' }}>(optionnel)</span>}
         </p>
         <p className="text-xs mt-0.5" style={{ color: '#A0A0A0' }}>
           {file ? `✓ ${file.name}` : 'Appuyer pour prendre une photo'}
