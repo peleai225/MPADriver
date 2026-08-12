@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
 import { compressImage } from '../lib/imageUtils';
+import { resolvePhotoUrl } from '../lib/format';
 
 const ORANGE = '#FF6100';
 const CITIES = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
@@ -53,7 +54,7 @@ export function EditProfilePage() {
     }
   };
 
-  const avatarSrc = photo ? URL.createObjectURL(photo) : driver.photo_url ?? null;
+  const avatarSrc = photo ? URL.createObjectURL(photo) : resolvePhotoUrl(driver.photo_url);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: '#F5F0EB' }}>

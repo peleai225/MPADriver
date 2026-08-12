@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
 import { api } from '../lib/api';
-import { formatFCFA } from '../lib/format';
+import { formatFCFA, resolvePhotoUrl } from '../lib/format';
 import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, notify, playAlert, requestNotificationPermission } from '../lib/alert';
 import type { EarningsSummary, Delivery } from '../lib/types';
@@ -90,10 +90,13 @@ export function DashboardPage() {
           {/* Avatar + greeting */}
           <div className="flex items-center gap-3">
             <div
-              className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
+              className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
               style={{ background: 'linear-gradient(135deg, #FF3301, #FF6100)' }}
             >
-              <span className="text-white font-extrabold text-xl">
+              {resolvePhotoUrl(driver?.photo_url) ? (
+                <img src={resolvePhotoUrl(driver?.photo_url)!} alt="" className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; (e.target as HTMLImageElement).nextElementSibling && ((e.target as HTMLImageElement).nextElementSibling as HTMLElement).style.display='flex'; }} />
+              ) : null}
+              <span className="text-white font-extrabold text-xl" style={{ display: resolvePhotoUrl(driver?.photo_url) ? 'none' : undefined }}>
                 {driver?.name?.[0]?.toUpperCase() ?? 'L'}
               </span>
             </div>

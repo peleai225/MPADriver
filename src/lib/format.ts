@@ -1,3 +1,13 @@
+import { API_BASE } from './api';
+
+const API_ORIGIN = new URL(API_BASE).origin;
+
+export function resolvePhotoUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `${API_ORIGIN}${url.startsWith('/') ? '' : '/'}${url}`;
+}
+
 export function formatFCFA(amount: number | null | undefined): string {
   if (amount == null) return '—';
   return new Intl.NumberFormat('fr-FR').format(Math.round(amount)) + ' F';

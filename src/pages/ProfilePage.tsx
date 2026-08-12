@@ -2,7 +2,7 @@ import { LogOut, Truck, Star, Award, MapPin, User, Pencil, Bell, ChevronRight } 
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import type { VerificationStatus } from '../lib/types';
-import { formatFCFA } from '../lib/format';
+import { formatFCFA, resolvePhotoUrl } from '../lib/format';
 
 const BG = '#F5F0EB';
 const ORANGE = '#FF6100';
@@ -74,8 +74,8 @@ export function ProfilePage() {
                 className="w-20 h-20 rounded-3xl overflow-hidden flex items-center justify-center"
                 style={{ background: 'rgba(255,255,255,0.25)', border: '2px solid rgba(255,255,255,0.4)' }}
               >
-                {driver.photo_url
-                  ? <img src={`${driver.photo_url}?v=${driver.id}`} alt={driver.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
+                {resolvePhotoUrl(driver.photo_url)
+                  ? <img src={`${resolvePhotoUrl(driver.photo_url)}?v=${driver.id}`} alt={driver.name} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display='none'; }} />
                   : <span className="text-white font-extrabold text-3xl">{driver.name[0].toUpperCase()}</span>}
               </div>
               <div
