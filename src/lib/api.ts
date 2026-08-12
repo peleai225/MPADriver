@@ -83,7 +83,7 @@ export const api = {
   },
 
   async updateProfile(form: FormData): Promise<Driver> {
-    form.append('_method', 'PUT');
+    form.append('_method', 'PATCH');
     const r = await request<any>('/driver/auth/profile', { method: 'POST', body: form });
     return r.driver ?? r.data ?? r;
   },
