@@ -110,6 +110,10 @@ export const api = {
     return r.data;
   },
 
+  async getDeliveryHistory(page = 1): Promise<{ data: Delivery[]; meta: { current_page: number; last_page: number } }> {
+    return request(`/driver/deliveries/history?page=${page}`);
+  },
+
   async getActiveDelivery(): Promise<Delivery | null> {
     try {
       const r = await request<{ data: Delivery | null }>('/driver/deliveries/active');

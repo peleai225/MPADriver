@@ -157,9 +157,9 @@ export function ProfilePage() {
           className="rounded-3xl overflow-hidden"
           style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #EEEEEE' }}
         >
-          <MenuRow icon="⚙️" label="Paramètres" onPress={() => {}} />
-          <MenuRow icon="❓" label="Aide & Support" onPress={() => {}} />
-          <MenuRow icon="📄" label="Conditions d'utilisation" onPress={() => {}} last />
+          <MenuRow icon="⚙️" label="Paramètres" onPress={() => push({ name: 'edit-profile' })} />
+          <MenuRow icon="❓" label="Aide & Support" onPress={() => window.open('tel:+2250501862640')} />
+          <MenuRow icon="📄" label="Conditions d'utilisation" onPress={() => window.open('https://menupro.ci/conditions')} last />
         </div>
 
         {/* ── DÉCONNEXION ── */}

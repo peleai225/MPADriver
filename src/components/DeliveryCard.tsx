@@ -25,7 +25,7 @@ function useCountdown(seconds: number) {
   return `${m}:${s}`;
 }
 
-export function DeliveryCard({ delivery, onAccept, loading }: Props) {
+export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) {
   const { order } = delivery;
   const timer = useCountdown(EXPIRE_SECONDS);
   const expired = timer === '00:00';
@@ -112,46 +112,54 @@ export function DeliveryCard({ delivery, onAccept, loading }: Props) {
         </div>
       </div>
 
-      {/* ── FOOTER : timer + bouton ── */}
-      <div
-        className="flex items-center gap-2 px-3 pb-3"
-      >
+      {/* ── FOOTER : timer + boutons ── */}
+      <div className="px-3 pb-3 space-y-2">
         {/* Timer */}
         <div
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full flex-1"
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full w-full justify-center"
           style={{ background: '#F5F0EB' }}
         >
           <Clock size={13} style={{ color: '#A0A0A0' }} />
           <span className="text-xs font-medium" style={{ color: '#717171' }}>Expire dans </span>
-          <span
-            className="text-xs font-extrabold"
-            style={{ color: expired ? '#EF4444' : ORANGE }}
-          >
+          <span className="text-xs font-extrabold" style={{ color: expired ? '#EF4444' : ORANGE }}>
             {timer}
           </span>
         </div>
 
-        {/* Bouton accepter */}
-        <button
-          onClick={onAccept}
-          disabled={loading || expired}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-full tap disabled:opacity-50 flex-[1.8]"
-          style={{
-            background: expired ? '#E4E4E4' : `linear-gradient(135deg, ${ORANGE}, #FF3301)`,
-            boxShadow: expired ? 'none' : '0 4px 16px rgba(255,97,0,.35)',
-          }}
-        >
-          {loading ? (
-            <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-          ) : (
-            <>
-              <span className="text-white text-sm font-bold">
-                {expired ? 'Expirée' : 'Accepter la course'}
-              </span>
-              {!expired && <ChevronRight size={15} className="text-white" />}
-            </>
-          )}
-        </button>
+        {/* Actions */}
+        <div className="flex gap-2">
+          {/* Refuser */}
+          <button
+            onClick={onDecline}
+            disabled={loading || expired}
+            className="flex-1 flex items-center justify-center py-2.5 rounded-full tap border disabled:opacity-40"
+            style={{ borderColor: '#E4E4E4', color: '#717171' }}
+          >
+            <span className="text-sm font-bold">Refuser</span>
+          </button>
+
+          {/* Accepter */}
+          <button
+            onClick={onAccept}
+            disabled={loading || expired}
+            className="flex-[2] flex items-center justify-center gap-2 py-2.5 rounded-full tap disabled:opacity-50"
+            style={{
+              background: expired ? '#E4E4E4' : `linear-gradient(135deg, ${ORANGE}, #FF3301)`,
+              boxShadow: expired ? 'none' : '0 4px 16px rgba(255,97,0,.35)',
+            }}
+          >
+            {loading ? (
+              <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <span className="text-sm font-bold" style={{ color: expired ? '#A0A0A0' : '#FFFFFF' }}>
+                  {expired ? 'Expirée' : 'Accepter'}
+                </span>
+                {!expired && <ChevronRight size={15} className="text-white" />}
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
