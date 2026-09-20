@@ -13,6 +13,7 @@ import { formatFCFA, resolvePhotoUrl } from '../lib/format';
 import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, notify, playAlert, requestNotificationPermission } from '../lib/alert';
 import { requestPushToken, onForegroundMessage } from '../lib/firebase';
+import { usePullToRefresh } from '../lib/usePullToRefresh';
 import type { EarningsSummary, Delivery } from '../lib/types';
 import { Card, CardContent } from '../components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
@@ -54,6 +55,17 @@ export function DashboardPage() {
     } catch {}
   }, [show]);
 
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([
+      api.getEarnings().then(setEarnings).catch(() => {}),
+      api.getActiveDelivery().then(setActiveDelivery).catch(() => {}),
+      api.getCashBalance().then(r => setCashOwed(r.total_owed_xof ?? 0)).catch(() => {}),
+      loadPending(true),
+      refresh(),
+    ]);
+  }, [loadPending, refresh]);
+  const pullIndicator = usePullToRefresh(handleRefresh);
+
   useEffect(() => {
     api.getEarnings().then(setEarnings).catch(() => {});
     api.getActiveDelivery().then(setActiveDelivery).catch(() => {});
@@ -88,8 +100,8 @@ export function DashboardPage() {
         if (!active) return;
         api.getActiveDelivery().then(d => setActiveDelivery(d)).catch(() => {});
         vibrate([300,100,300,100,500]); playAlert();
-        notify('Course assignee !', `Commande ${data?.order_ref ?? ''} — allez chercher la commande.`, () => go({ name: 'active-delivery' }));
-        show('Course assignee — demarrez !', 'success');
+        notify('Course assignée !', `Commande ${data?.order_ref ?? ''} — allez chercher la commande.`, () => go({ name: 'active-delivery' }));
+        show('Course assignée — démarrez !', 'success');
       }).then(u => { if (active) unsubs.push(u); });
     }
     unsubsRef.current = unsubs;
@@ -119,6 +131,9 @@ export function DashboardPage() {
 
   return (
     <div className="min-h-screen pb-28 bg-background">
+      <div ref={pullIndicator} className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-8 h-8 rounded-full bg-card shadow-card border border-border flex items-center justify-center opacity-0 transition-transform" style={{ pointerEvents: 'none' }}>
+        <Truck size={16} className="text-primary" />
+      </div>
 
       {/* ── HERO HEADER ── */}
       <div className="relative bg-foreground overflow-hidden safe-top">
@@ -263,7 +278,7 @@ export function DashboardPage() {
                     onClick={() => go({ name: 'earnings' })}
                     className="flex items-center gap-1 text-white/60 text-xs font-medium tap hover:text-white/90"
                   >
-                    Details <ChevronRight size={12} />
+                    Détails <ChevronRight size={12} />
                   </button>
                 </div>
 

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './lib/auth';
 import { NavProvider, useNav } from './lib/nav';
-import { ToastProvider } from './lib/toast';
+import { ToastProvider, useToast } from './lib/toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { OnboardingPage } from './pages/OnboardingPage';
@@ -23,6 +23,41 @@ function SplashScreen() {
       <div className="flex flex-col items-center gap-6">
         <img src="/logo.png" alt="MENUPRO" className="h-14 object-contain" />
         <div className="w-6 h-6 border-2 border-white/20 border-t-primary rounded-full animate-spin" />
+      </div>
+    </div>
+  );
+}
+
+function PwaUpdateBanner() {
+  const [show, setShow] = useState(false);
+  const { show: toast } = useToast();
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.ready.then(reg => {
+      reg.addEventListener('updatefound', () => {
+        const newSw = reg.installing;
+        if (!newSw) return;
+        newSw.addEventListener('statechange', () => {
+          if (newSw.state === 'installed' && navigator.serviceWorker.controller) {
+            setShow(true);
+          }
+        });
+      });
+    });
+  }, []);
+
+  if (!show) return null;
+  return (
+    <div className="fixed top-0 inset-x-0 z-[200] safe-top">
+      <div className="mx-4 mt-2 flex items-center gap-3 rounded-2xl bg-foreground px-4 py-3 shadow-elevated">
+        <p className="flex-1 text-white text-sm font-semibold">Nouvelle version disponible</p>
+        <button
+          onClick={() => { toast('Mise à jour en cours...', 'info'); window.location.reload(); }}
+          className="text-primary font-bold text-sm tap"
+        >
+          Mettre à jour
+        </button>
       </div>
     </div>
   );
@@ -62,6 +97,7 @@ function Router() {
       </ErrorBoundary>
       {showBottomNav && <BottomNav />}
       <DeliveryRequestAlert />
+      <PwaUpdateBanner />
     </div>
   );
 }

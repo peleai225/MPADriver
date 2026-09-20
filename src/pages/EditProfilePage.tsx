@@ -13,10 +13,10 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 
-const CITIES = ['Abidjan', 'Bouake', 'Yamoussoukro', 'San-Pedro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
+const CITIES = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
 const VEHICLES = [
   { value: 'moto',    label: 'Moto',    Icon: Bike },
-  { value: 'velo',    label: 'Velo',    Icon: Bike },
+  { value: 'velo',    label: 'Vélo',    Icon: Bike },
   { value: 'voiture', label: 'Voiture', Icon: Car },
 ];
 
@@ -36,13 +36,14 @@ export function EditProfilePage() {
   if (!driver) return null;
 
   const handleSubmit = async () => {
+    if (!name.trim()) { show('Le nom est requis.', 'error'); return; }
     setLoading(true);
     const form = new FormData();
-    form.append('name', name);
+    form.append('name', name.trim());
     form.append('city', city);
-    form.append('zone', zone);
+    form.append('zone', zone.trim());
     form.append('vehicle_type', vehicleType);
-    form.append('vehicle_plate', vehiclePlate);
+    form.append('vehicle_plate', vehiclePlate.trim());
     if (photo) {
       const compressed = await compressImage(photo, 800, 800, 0.8);
       form.append('photo', compressed, compressed.name);
@@ -51,7 +52,7 @@ export function EditProfilePage() {
       const res = await api.updateProfile(form);
       if (res) setDriver(res);
       await refresh();
-      show('Profil mis a jour !', 'success');
+      show('Profil mis à jour !', 'success');
       pop();
     } catch (err: any) {
       show(err.message || 'Erreur.', 'error');
@@ -77,113 +78,117 @@ export function EditProfilePage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-white font-extrabold text-lg">Modifier le profil</h1>
-          <p className="text-white/40 text-xs">Mettez vos informations a jour</p>
+          <p className="text-white/40 text-xs">Mettez vos informations à jour</p>
         </div>
       </div>
 
       {/* CONTENT */}
-      <div className="flex-1 overflow-y-auto px-5 pb-32">
+      <div className="flex-1 overflow-y-auto pb-32">
+        <div className="max-w-md mx-auto px-5">
 
-        {/* AVATAR */}
-        <div className="flex flex-col items-center py-8">
-          <label className="cursor-pointer tap relative">
-            <input
-              type="file" accept="image/*" capture="user" className="hidden"
-              onChange={e => e.target.files?.[0] && setPhoto(e.target.files[0])}
-            />
-            <Avatar className="h-24 w-24 rounded-3xl gradient-brand shadow-pop">
-              {avatarSrc
-                ? <AvatarImage src={avatarSrc} alt="avatar" className="rounded-3xl" />
-                : null}
-              <AvatarFallback className="rounded-3xl bg-transparent text-white font-extrabold text-4xl">
-                {driver.name[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-card bg-primary shadow-md">
-              <Camera size={14} className="text-white" />
+          {/* AVATAR */}
+          <div className="flex flex-col items-center py-6">
+            <label className="cursor-pointer tap relative">
+              <input
+                type="file" accept="image/*" capture="user" className="hidden"
+                onChange={e => e.target.files?.[0] && setPhoto(e.target.files[0])}
+              />
+              <Avatar className="h-24 w-24 rounded-3xl gradient-brand shadow-pop">
+                {avatarSrc
+                  ? <AvatarImage src={avatarSrc} alt="avatar" className="rounded-3xl" />
+                  : null}
+                <AvatarFallback className="rounded-3xl bg-transparent text-white font-extrabold text-4xl">
+                  {driver.name[0].toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-card bg-primary shadow-md">
+                <Camera size={14} className="text-white" />
+              </div>
+            </label>
+
+            {photo ? (
+              <div className="flex items-center gap-1.5 mt-3 text-xs font-semibold text-success-600">
+                <CheckCircle2 size={13} /> Nouvelle photo sélectionnée
+              </div>
+            ) : (
+              <p className="mt-3 text-xs text-muted-foreground">Appuyez pour changer la photo</p>
+            )}
+          </div>
+
+          <div className="space-y-4">
+
+            <div className="space-y-1.5">
+              <Label>Nom complet *</Label>
+              <Input value={name} onChange={e => setName(e.target.value)} placeholder="Kouamé Brou" autoComplete="name" />
             </div>
-          </label>
 
-          {photo ? (
-            <div className="flex items-center gap-1.5 mt-3 text-xs font-semibold text-success-600">
-              <CheckCircle2 size={13} /> Nouvelle photo selectionnee
+            <div className="space-y-1.5">
+              <Label>Ville de base *</Label>
+              <select
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                className="w-full h-13 px-4 rounded-xl border border-input bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
             </div>
-          ) : (
-            <p className="mt-3 text-xs text-muted-foreground">Appuyez pour changer la photo</p>
-          )}
-        </div>
 
-        <div className="space-y-4">
-
-          <div className="space-y-1.5">
-            <Label>Nom complet *</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Kouame Brou" />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Ville de base *</Label>
-            <select
-              value={city}
-              onChange={e => setCity(e.target.value)}
-              className="w-full h-13 px-4 rounded-xl border border-input bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Commune / Zone</Label>
-            <Input value={zone} onChange={e => setZone(e.target.value)} placeholder="Ex: Cocody, Plateau..." />
-          </div>
-
-          <div>
-            <Label className="mb-2">Type de vehicule *</Label>
-            <div className="grid grid-cols-3 gap-2">
-              {VEHICLES.map(v => (
-                <Card
-                  key={v.value}
-                  className={cn(
-                    'cursor-pointer tap border-2 transition-all',
-                    vehicleType === v.value ? 'border-primary bg-primary/5' : 'border-border',
-                  )}
-                  onClick={() => setVehicleType(v.value as 'moto' | 'velo' | 'voiture')}
-                >
-                  <CardContent className="flex flex-col items-center gap-1.5 py-4 px-2">
-                    <div className={cn(
-                      'w-12 h-12 rounded-xl flex items-center justify-center',
-                      vehicleType === v.value ? 'bg-primary/10' : 'bg-muted',
-                    )}>
-                      <v.Icon size={24} className={vehicleType === v.value ? 'text-primary' : 'text-muted-foreground'} />
-                    </div>
-                    <span className={cn('text-xs font-bold', vehicleType === v.value ? 'text-primary' : 'text-muted-foreground')}>
-                      {v.label}
-                    </span>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="space-y-1.5">
+              <Label>Commune / Zone</Label>
+              <Input value={zone} onChange={e => setZone(e.target.value)} placeholder="Ex: Cocody, Plateau..." />
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label>Plaque d'immatriculation</Label>
-            <Input value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value.toUpperCase())} placeholder="AA-123-CI" className="uppercase" />
-          </div>
+            <div>
+              <Label className="mb-2">Type de véhicule *</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {VEHICLES.map(v => (
+                  <Card
+                    key={v.value}
+                    className={cn(
+                      'cursor-pointer tap border-2 transition-all',
+                      vehicleType === v.value ? 'border-primary bg-primary/5' : 'border-border',
+                    )}
+                    onClick={() => setVehicleType(v.value as 'moto' | 'velo' | 'voiture')}
+                  >
+                    <CardContent className="flex flex-col items-center gap-1.5 py-4 px-2">
+                      <div className={cn(
+                        'w-12 h-12 rounded-xl flex items-center justify-center',
+                        vehicleType === v.value ? 'bg-primary/10' : 'bg-muted',
+                      )}>
+                        <v.Icon size={24} className={vehicleType === v.value ? 'text-primary' : 'text-muted-foreground'} />
+                      </div>
+                      <span className={cn('text-xs font-bold', vehicleType === v.value ? 'text-primary' : 'text-muted-foreground')}>
+                        {v.label}
+                      </span>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
 
+            <div className="space-y-1.5">
+              <Label>Plaque d'immatriculation</Label>
+              <Input value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value.toUpperCase())} placeholder="AA-123-CI" className="uppercase" autoComplete="off" />
+            </div>
+
+          </div>
         </div>
       </div>
 
       {/* CTA */}
-      <div className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom bg-card/97 border-t border-border">
-        <Button
-          onClick={handleSubmit}
-          disabled={loading}
-          size="lg"
-          className="w-full rounded-full"
-        >
-          {loading ? (
-            <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
-          ) : 'Enregistrer les modifications'}
-        </Button>
+      <div className="fixed bottom-0 inset-x-0 safe-bottom bg-card/97 border-t border-border">
+        <div className="max-w-md mx-auto px-5 py-4">
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !name.trim()}
+            size="lg"
+            className="w-full rounded-full"
+          >
+            {loading ? (
+              <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+            ) : 'Enregistrer les modifications'}
+          </Button>
+        </div>
       </div>
     </div>
   );

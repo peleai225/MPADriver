@@ -119,7 +119,7 @@ export function ActiveDeliveryPage() {
           vibrate([200, 100, 200]);
           playAlert();
           notify('Commande prête !', 'Le restaurant a terminé la préparation.');
-          show('Le restaurant a prepare la commande !', 'success');
+          show('Le restaurant a préparé la commande !', 'success');
         } else if (newStatus === 'cancelled') {
           vibrate([500, 200, 500]);
           notify('Commande annulée par le restaurant', 'La commande a été annulée.');
@@ -263,10 +263,10 @@ export function ActiveDeliveryPage() {
           <CardContent className="p-4 text-left">
             <div className="flex items-center gap-2 mb-1">
               <AlertTriangle size={16} className="text-warning-600" />
-              <p className="font-bold text-sm text-warning-700">Argent a reverser</p>
+              <p className="font-bold text-sm text-warning-700">Argent à reverser</p>
             </div>
             <p className="font-extrabold text-xl mt-1 tabular text-warning-600">{formatFCFA(cashDebt.amount_owed)}</p>
-            <p className="text-xs mt-0.5 text-warning-700">a {cashDebt.restaurant}</p>
+            <p className="text-xs mt-0.5 text-warning-700">à {cashDebt.restaurant}</p>
           </CardContent>
         </Card>
       )}
@@ -454,7 +454,7 @@ export function ActiveDeliveryPage() {
                     disabled={verifyCode.length !== 4 || updating}
                     className="h-14 px-5"
                   >
-                    {updating ? <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" /> : 'Verifier'}
+                    {updating ? <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" /> : 'Vérifier'}
                   </Button>
                 </div>
               )}
@@ -470,7 +470,7 @@ export function ActiveDeliveryPage() {
                   {proofUploaded ? <CheckCircle2 size={18} className="text-white" /> : <Camera size={18} className="text-primary" />}
                 </div>
                 <div>
-                  <p className="font-bold text-sm text-foreground">Photo preuve</p>
+                  <p className="font-bold text-sm text-foreground">Photo de preuve</p>
                   <p className="text-xs text-muted-foreground">Prenez une photo de la livraison</p>
                 </div>
               </div>
@@ -544,7 +544,7 @@ export function ActiveDeliveryPage() {
           {delivery!.driver_earning_estimate != null && (
             <Card className="border-0 bg-primary/20">
               <CardContent className="px-3 py-2 text-right">
-                <p className="text-[10px] text-primary">Gain estime</p>
+                <p className="text-[10px] text-primary">Gain estimé</p>
                 <p className="font-extrabold text-lg tabular text-primary">{formatFCFA(delivery!.driver_earning_estimate)}</p>
               </CardContent>
             </Card>
@@ -729,7 +729,7 @@ export function ActiveDeliveryPage() {
           <Card className="w-full rounded-t-3xl rounded-b-none border-0 safe-bottom">
             <CardContent className="p-6 space-y-4">
               <h2 className="font-extrabold text-xl text-foreground">Collecte cash</h2>
-              <p className="text-sm text-muted-foreground">Entrez le montant total recu du client.</p>
+              <p className="text-sm text-muted-foreground">Entrez le montant total reçu du client.</p>
               <Input
                 type="number"
                 value={cashAmount}
@@ -742,21 +742,21 @@ export function ActiveDeliveryPage() {
                 <Card className="border-warning-200 bg-warning-50">
                   <CardContent className="p-3 flex items-center gap-2">
                     <AlertTriangle size={16} className="text-warning-600 shrink-0" />
-                    <p className="text-sm font-bold text-warning-700">Tu dois reverser {formatFCFA(cashDebt.amount_owed)} a {cashDebt.restaurant}</p>
+                    <p className="text-sm font-bold text-warning-700">Tu dois reverser {formatFCFA(cashDebt.amount_owed)} à {cashDebt.restaurant}</p>
                   </CardContent>
                 </Card>
               )}
               <Button
                 onClick={async () => {
                   const amount = parseInt(cashAmount);
-                  if (!amount) { show('Entrez le montant collecte.', 'error'); return; }
+                  if (!amount) { show('Entrez le montant collecté.', 'error'); return; }
                   setUpdating(true);
                   try {
                     const result = await api.confirmCashCollected(delivery!.id, amount);
                     setCashDebt({ amount_owed: result.amount_owed, restaurant: result.restaurant });
                     setShowCashModal(false);
                     setPhase('done');
-                    show(result.amount_owed > 0 ? `Reverse ${formatFCFA(result.amount_owed)} a ${result.restaurant}` : 'Livraison terminee !', result.amount_owed > 0 ? 'info' : 'success');
+                    show(result.amount_owed > 0 ? `Reversez ${formatFCFA(result.amount_owed)} à ${result.restaurant}` : 'Livraison terminée !', result.amount_owed > 0 ? 'info' : 'success');
                   } catch (e: any) {
                     show(e.message || 'Erreur', 'error');
                   } finally { setUpdating(false); }

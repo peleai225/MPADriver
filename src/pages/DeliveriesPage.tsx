@@ -17,6 +17,7 @@ import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { Skeleton } from '../components/ui/skeleton';
+import { usePullToRefresh } from '../lib/usePullToRefresh';
 import type { Delivery } from '../lib/types';
 import { formatFCFA, DELIVERY_STATUS_LABELS } from '../lib/format';
 
@@ -151,6 +152,12 @@ export function DeliveriesPage() {
     }
   }, [show]);
 
+  const handleRefresh = useCallback(async () => {
+    await Promise.all([loadPending(), loadActive()]);
+    if (tab === 'done') await loadHistory();
+  }, [loadPending, loadActive, loadHistory, tab]);
+  const pullIndicator = usePullToRefresh(handleRefresh);
+
   useEffect(() => {
     loadPending();
     loadActive();
@@ -197,6 +204,9 @@ export function DeliveriesPage() {
 
   return (
     <div className="min-h-screen pb-28 bg-background">
+      <div ref={pullIndicator} className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-8 h-8 rounded-full bg-card shadow-card border border-border flex items-center justify-center opacity-0 transition-transform" style={{ pointerEvents: 'none' }}>
+        <RefreshCw size={16} className="text-primary" />
+      </div>
 
       <PageHeader
         title="Courses"
@@ -341,7 +351,7 @@ export function DeliveriesPage() {
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-muted">
                         <Inbox size={28} className="text-muted-foreground" />
                       </div>
-                      <p className="font-bold text-base text-foreground">Aucune course terminee</p>
+                      <p className="font-bold text-base text-foreground">Aucune course terminée</p>
                       <p className="text-sm mt-1 text-muted-foreground">Votre historique apparaîtra ici.</p>
                     </CardContent>
                   </Card>

@@ -206,7 +206,7 @@ export function ProfilePage() {
                 <p className="font-bold text-sm text-foreground">Informations</p>
               </div>
               <InfoRow icon={<MapPin size={15} className="text-primary" />} label="Ville" value={`${driver.city}${driver.zone ? ` — ${driver.zone}` : ''}`} />
-              <InfoRow icon={<VehicleIcon size={15} className="text-primary" />} label="Vehicule" value={VEHICLE_LABELS[driver.vehicle_type] ?? driver.vehicle_type} />
+              <InfoRow icon={<VehicleIcon size={15} className="text-primary" />} label="Véhicule" value={VEHICLE_LABELS[driver.vehicle_type] ?? driver.vehicle_type} />
               {driver.vehicle_plate && <InfoRow icon={<FileText size={15} className="text-primary" />} label="Plaque" value={driver.vehicle_plate} />}
               <InfoRow
                 icon={driver.is_available ? <Wifi size={15} className="text-success-600" /> : <WifiOff size={15} className="text-muted-foreground" />}
@@ -250,7 +250,7 @@ export function ProfilePage() {
         {/* VERSION */}
         <motion.div variants={fadeUp}>
           <p className="text-center text-xs text-muted-foreground/50 pb-2">
-            MENUPRO Livraison v1.0.0
+            MENUPRO Livraison v{__APP_VERSION__}
           </p>
         </motion.div>
 

@@ -143,7 +143,7 @@ export function EarningsPage() {
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-warning-100">
                     <AlertTriangle size={16} className="text-warning-600" />
                   </div>
-                  <p className="font-bold text-sm text-warning-700">Argent a reverser</p>
+                  <p className="font-bold text-sm text-warning-700">Argent à reverser</p>
                 </div>
                 <p className="font-extrabold text-lg tabular text-warning-600">{formatFCFA(cashBalance.total_owed_xof)}</p>
               </div>
@@ -294,7 +294,7 @@ export function EarningsPage() {
             </div>
             {remitMethod !== 'cash' && (
               <div>
-                <Label>Reference transaction</Label>
+                <Label>Référence transaction</Label>
                 <Input value={remitRef} onChange={e => setRemitRef(e.target.value)} placeholder="Ex: W123456789" />
               </div>
             )}

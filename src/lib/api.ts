@@ -28,7 +28,7 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   if (!isFormData) headers['Content-Type'] = 'application/json';
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  console.log(`[API] ${opts.method ?? 'GET'} ${path}`, isFormData ? '(FormData)' : opts.body ?? '');
+  if (import.meta.env.DEV) console.log(`[API] ${opts.method ?? 'GET'} ${path}`, isFormData ? '(FormData)' : opts.body ?? '');
 
   const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
   let data: any = null;
@@ -36,10 +36,10 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
 
   if (!res.ok) {
-    console.error(`[API] ❌ ${res.status} ${path}`, data);
+    if (import.meta.env.DEV) console.error(`[API] ${res.status} ${path}`, data);
     let message = (data && (data.message || data.error)) || `HTTP ${res.status}`;
     if (res.status === 422 && data?.errors) {
-      console.error(`[API] Validation errors:`, data.errors);
+      if (import.meta.env.DEV) console.error(`[API] Validation errors:`, data.errors);
       const firstField = Object.keys(data.errors)[0];
       if (firstField && data.errors[firstField]?.[0]) {
         message = data.errors[firstField][0];
@@ -54,7 +54,7 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
     throw err;
   }
 
-  console.log(`[API] ✓ ${res.status} ${path}`, data);
+  if (import.meta.env.DEV) console.log(`[API] ${res.status} ${path}`, data);
   return data as T;
 }
 

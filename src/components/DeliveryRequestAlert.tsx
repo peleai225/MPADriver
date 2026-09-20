@@ -8,6 +8,7 @@ import { api } from '../lib/api';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
 import { useAuth } from '../lib/auth';
+import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, playAlert, notify } from '../lib/alert';
 import { formatFCFA } from '../lib/format';
 import type { Delivery } from '../lib/types';
@@ -15,7 +16,6 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 
 const TIMEOUT_SECONDS = 30;
-const FRESHNESS_MS = 3 * 60 * 1000;
 
 export function DeliveryRequestAlert() {
   const { driver } = useAuth();
@@ -27,7 +27,6 @@ export function DeliveryRequestAlert() {
   const [loading, setLoading] = useState(false);
   const shownIdsRef = useRef(new Set<number>());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const dismiss = useCallback(() => {
     setDelivery(null);
@@ -35,16 +34,11 @@ export function DeliveryRequestAlert() {
     if (timerRef.current) clearInterval(timerRef.current);
   }, []);
 
-  const checkPending = useCallback(async () => {
+  const showNewDelivery = useCallback(async () => {
     if (!driver?.is_available) return;
     try {
       const list = await api.getPendingDeliveries();
-      const now = Date.now();
-      const fresh = list.find(d =>
-        !shownIdsRef.current.has(d.id) &&
-        d.assigned_at &&
-        now - new Date(d.assigned_at).getTime() < FRESHNESS_MS
-      );
+      const fresh = list.find(d => !shownIdsRef.current.has(d.id));
       if (fresh) {
         shownIdsRef.current.add(fresh.id);
         setDelivery(fresh);
@@ -52,16 +46,30 @@ export function DeliveryRequestAlert() {
         vibrate([0, 500, 300, 500, 300, 500]);
         playAlert();
         notify('Nouvelle course !', 'Ouvrez l\'application pour accepter.');
+        updateAppBadge(list.length);
       }
     } catch {}
   }, [driver?.is_available]);
 
   useEffect(() => {
-    if (!driver?.is_available) return;
-    checkPending();
-    pollRef.current = setInterval(checkPending, 10_000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [driver?.is_available, checkPending]);
+    if (!driver?.is_available || !driver?.city) return;
+    let active = true;
+    const unsubs: Array<() => void> = [];
+
+    listenNewDelivery(driver.city, () => {
+      if (!active) return;
+      showNewDelivery();
+    }).then(u => { if (active) unsubs.push(u); });
+
+    if (driver?.id) {
+      listenDriverAssigned(driver.id, () => {
+        if (!active) return;
+        showNewDelivery();
+      }).then(u => { if (active) unsubs.push(u); });
+    }
+
+    return () => { active = false; unsubs.forEach(u => u()); };
+  }, [driver?.is_available, driver?.city, driver?.id, showNewDelivery]);
 
   useEffect(() => {
     if (!delivery) return;
@@ -84,6 +92,7 @@ export function DeliveryRequestAlert() {
       await api.acceptDelivery(delivery.id);
       show('Course acceptée !', 'success');
       dismiss();
+      updateAppBadge(0);
       go({ name: 'active-delivery' });
     } catch (err: any) {
       show(err.message || 'Erreur', 'error');
@@ -254,4 +263,13 @@ export function DeliveryRequestAlert() {
       )}
     </AnimatePresence>
   );
+}
+
+function updateAppBadge(count: number): void {
+  try {
+    if ('setAppBadge' in navigator) {
+      if (count > 0) (navigator as any).setAppBadge(count);
+      else (navigator as any).clearAppBadge();
+    }
+  } catch {}
 }
