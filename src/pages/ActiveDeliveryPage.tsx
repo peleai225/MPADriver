@@ -9,9 +9,11 @@ import { startTracking, stopTracking, openInMaps } from '../lib/geo';
 import { listenDeliveryStatus } from '../lib/echo';
 import { vibrate, notify } from '../lib/alert';
 import type { Delivery } from '../lib/types';
-
-const BG = '#F5F0EB';
-const ORANGE = '#FF6100';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
+import { Separator } from '../components/ui/separator';
 
 const STEPS = ['assigned', 'heading_to_restaurant', 'picked_up', 'delivering'];
 const STEP_LABELS = ['Assigné', 'En route', 'Récupéré', 'En livraison'];
@@ -80,50 +82,41 @@ export function ActiveDeliveryPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: BG }}>
-      <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin" style={{ borderColor: ORANGE, borderTopColor: 'transparent' }} />
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   if (!delivery && !done) return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: BG }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-background">
       <span className="text-7xl mb-5">🛵</span>
-      <p className="font-extrabold text-xl" style={{ color: '#1C1C1C' }}>Aucune course active</p>
-      <p className="text-sm mt-2" style={{ color: '#A0A0A0' }}>Acceptez une course pour commencer.</p>
-      <button
-        onClick={() => go({ name: 'deliveries' })}
-        className="mt-6 px-8 h-13 rounded-full text-white font-bold tap gradient-flame"
-        style={{ boxShadow: '0 8px 24px rgba(255,97,0,.35)' }}
-      >
+      <p className="font-extrabold text-xl text-foreground">Aucune course active</p>
+      <p className="text-sm mt-2 text-muted-foreground">Acceptez une course pour commencer.</p>
+      <Button onClick={() => go({ name: 'deliveries' })} size="lg" className="mt-6 rounded-full">
         Voir les courses
-      </button>
+      </Button>
     </div>
   );
 
   if (done) return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center" style={{ background: '#1C1C1C' }}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-foreground">
       {cashDebt && cashDebt.amount_owed > 0 && (
-        <div className="mb-6 w-full max-w-xs rounded-3xl p-4 text-left" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-          <p className="font-bold text-sm" style={{ color: '#92400E' }}>⚠️ Argent à reverser</p>
-          <p className="font-extrabold text-xl mt-1" style={{ color: '#D97706' }}>{formatFCFA(cashDebt.amount_owed)}</p>
-          <p className="text-xs mt-0.5" style={{ color: '#92400E' }}>à {cashDebt.restaurant}</p>
-        </div>
+        <Card className="mb-6 w-full max-w-xs border-warning-200 bg-warning-50">
+          <CardContent className="p-4 text-left">
+            <p className="font-bold text-sm text-warning-700">⚠️ Argent à reverser</p>
+            <p className="font-extrabold text-xl mt-1 text-warning-600">{formatFCFA(cashDebt.amount_owed)}</p>
+            <p className="text-xs mt-0.5 text-warning-700">à {cashDebt.restaurant}</p>
+          </CardContent>
+        </Card>
       )}
-      <div
-        className="w-24 h-24 rounded-full flex items-center justify-center mb-6 animate-scale-in"
-        style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.2)' }}
-      >
-        <CheckCircle2 size={44} className="text-green-400" />
+      <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6 animate-scale-in bg-success-50 border border-success-200">
+        <CheckCircle2 size={44} className="text-success-500" />
       </div>
       <h1 className="text-white font-extrabold text-3xl mb-2">Livraison effectuée !</h1>
       <p className="text-white/50 text-sm mb-10">Votre gain a été ajouté à votre solde.</p>
-      <button
-        onClick={() => go({ name: 'dashboard' })}
-        className="px-10 h-14 rounded-full text-white font-bold tap gradient-flame"
-        style={{ boxShadow: '0 8px 24px rgba(255,97,0,.35)' }}
-      >
+      <Button onClick={() => go({ name: 'dashboard' })} size="lg" className="rounded-full">
         Retour à l'accueil
-      </button>
+      </Button>
     </div>
   );
 
@@ -141,54 +134,45 @@ export function ActiveDeliveryPage() {
     : "Livraison effectuée ✓";
 
   return (
-    <div className="min-h-screen flex flex-col pb-28" style={{ background: BG }}>
+    <div className="min-h-screen flex flex-col pb-28 bg-background">
 
       {/* ── HEADER ── */}
-      <div className="px-5 pt-safe pt-5 pb-4" style={{ background: '#1C1C1C' }}>
+      <div className="px-5 pt-safe pt-5 pb-4 bg-foreground">
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-white/40 text-xs">Course en cours</p>
             <h1 className="text-white font-extrabold text-xl">{order.reference}</h1>
           </div>
           {delivery!.driver_earning_estimate != null && (
-            <div
-              className="px-3 py-2 rounded-2xl text-right"
-              style={{ background: 'rgba(255,97,0,0.2)' }}
-            >
-              <p className="text-[10px]" style={{ color: ORANGE }}>Gain estimé</p>
-              <p className="font-extrabold text-lg" style={{ color: ORANGE }}>{formatFCFA(delivery!.driver_earning_estimate)}</p>
-            </div>
+            <Card className="border-0 bg-primary/20">
+              <CardContent className="px-3 py-2 text-right">
+                <p className="text-[10px] text-primary">Gain estimé</p>
+                <p className="font-extrabold text-lg text-primary">{formatFCFA(delivery!.driver_earning_estimate)}</p>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        {/* Status pill */}
-        <div
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold mb-4"
-          style={{ background: 'rgba(255,97,0,0.2)', color: ORANGE }}
-        >
-          <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: ORANGE }} />
+        <Badge variant="default" dot pulse className="mb-4">
           {DELIVERY_STATUS_LABELS[delivery!.status] ?? delivery!.status}
-        </div>
+        </Badge>
 
         {/* Steps visuels */}
         <div className="flex items-center gap-2">
           {STEPS.map((s, i) => (
             <div key={s} className="flex items-center flex-1">
               <div className="flex flex-col items-center flex-1">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all"
-                  style={{
-                    background: i < stepIdx ? '#22C55E' : i === stepIdx ? ORANGE : 'rgba(255,255,255,0.1)',
-                  }}
-                >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all ${
+                  i < stepIdx ? 'bg-success-500' : i === stepIdx ? 'bg-primary' : 'bg-white/10'
+                }`}>
                   {i < stepIdx ? '✓' : STEP_ICONS[i]}
                 </div>
-                <p className="text-[9px] mt-1 font-medium" style={{ color: i <= stepIdx ? '#FFFFFF' : 'rgba(255,255,255,0.3)' }}>
+                <p className={`text-[9px] mt-1 font-medium ${i <= stepIdx ? 'text-white' : 'text-white/30'}`}>
                   {STEP_LABELS[i]}
                 </p>
               </div>
               {i < STEPS.length - 1 && (
-                <div className="h-0.5 flex-1 mb-5" style={{ background: i < stepIdx ? '#22C55E' : 'rgba(255,255,255,0.15)' }} />
+                <div className={`h-0.5 flex-1 mb-5 ${i < stepIdx ? 'bg-success-500' : 'bg-white/15'}`} />
               )}
             </div>
           ))}
@@ -203,126 +187,139 @@ export function ActiveDeliveryPage() {
           clientLat={order.delivery_latitude}
           clientLng={order.delivery_longitude}
         />
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => openInMaps(targetLat, targetLng, targetLabel)}
-          className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-white rounded-full px-3 py-2 shadow-card text-xs font-bold tap"
-          style={{ color: ORANGE }}
+          className="absolute bottom-3 right-3 shadow-card"
         >
           <Navigation size={13} /> Naviguer
-        </button>
+        </Button>
       </div>
 
       <div className="px-5 mt-4 space-y-3">
 
         {/* ── ADRESSE CIBLE ── */}
-        <div className="rounded-3xl p-4" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #EEEEEE' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0" style={{ background: isPickingUp ? 'rgba(255,97,0,0.1)' : '#F0FDF4' }}>
-              <MapPin size={16} style={{ color: isPickingUp ? ORANGE : '#22C55E' }} />
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${isPickingUp ? 'bg-primary/10' : 'bg-success-50'}`}>
+                <MapPin size={16} className={isPickingUp ? 'text-primary' : 'text-success-600'} />
+              </div>
+              <p className="text-sm font-bold text-muted-foreground">{isPickingUp ? 'Récupérer chez' : 'Livrer à'}</p>
             </div>
-            <p className="text-sm font-bold" style={{ color: '#A0A0A0' }}>{isPickingUp ? 'Récupérer chez' : 'Livrer à'}</p>
-          </div>
-          {isPickingUp && <p className="font-extrabold text-base mb-0.5" style={{ color: '#1C1C1C' }}>{order.restaurant.name}</p>}
-          <p className="text-sm" style={{ color: '#717171' }}>{targetLabel}</p>
+            {isPickingUp && <p className="font-extrabold text-base mb-0.5 text-foreground">{order.restaurant.name}</p>}
+            <p className="text-sm text-muted-foreground">{targetLabel}</p>
 
-          {isPickingUp && order.restaurant.phone && (
-            <a href={`tel:${order.restaurant.phone}`} className="mt-3 inline-flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-full tap" style={{ background: 'rgba(255,97,0,0.1)', color: ORANGE }}>
-              <Phone size={13} /> Appeler le restaurant
-            </a>
-          )}
-          {!isPickingUp && order.delivery_phone && (
-            <a href={`tel:${order.delivery_phone}`} className="mt-3 inline-flex items-center gap-2 text-xs font-bold px-3 py-2 rounded-full tap bg-green-50 text-green-600">
-              <Phone size={13} /> Appeler le client
-            </a>
-          )}
-        </div>
+            {isPickingUp && order.restaurant.phone && (
+              <Button variant="outline" size="sm" className="mt-3" asChild>
+                <a href={`tel:${order.restaurant.phone}`}>
+                  <Phone size={13} /> Appeler le restaurant
+                </a>
+              </Button>
+            )}
+            {!isPickingUp && order.delivery_phone && (
+              <Button variant="outline" size="sm" className="mt-3 border-success-200 text-success-600 hover:bg-success-50" asChild>
+                <a href={`tel:${order.delivery_phone}`}>
+                  <Phone size={13} /> Appeler le client
+                </a>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
         {/* ── COMMANDE ── */}
-        <div className="rounded-3xl p-4" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #EEEEEE' }}>
-          <div className="flex items-center gap-2 mb-3">
-            <ClipboardList size={16} style={{ color: ORANGE }} />
-            <p className="font-bold text-sm" style={{ color: '#1C1C1C' }}>Commande <span style={{ color: ORANGE }}>#{order.reference}</span></p>
-          </div>
-          <div className="space-y-1.5 mb-3">
-            {order.items.slice(0, 3).map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0" style={{ background: ORANGE }}>
-                  {item.quantity}
-                </span>
-                <p className="text-sm" style={{ color: '#717171' }}>{item.name}</p>
-              </div>
-            ))}
-            {order.items.length > 3 && <p className="text-xs" style={{ color: '#A0A0A0' }}>+{order.items.length - 3} autres articles</p>}
-          </div>
-          <div className="h-px mb-3" style={{ background: '#F1F1F1' }} />
-          <div className="flex items-center justify-between">
-            <span className="text-xs" style={{ color: '#A0A0A0' }}>
-              {order.payment_method === 'cash_on_delivery' ? '💵 Paiement à la livraison' : '📱 Payé en ligne'}
-            </span>
-            <span className="font-extrabold text-lg" style={{ color: '#1C1C1C' }}>{formatFCFA(order.total)}</span>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <ClipboardList size={16} className="text-primary" />
+              <p className="font-bold text-sm text-foreground">Commande <span className="text-primary">#{order.reference}</span></p>
+            </div>
+            <div className="space-y-1.5 mb-3">
+              {order.items.slice(0, 3).map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Badge className="w-6 h-6 p-0 justify-center text-xs">{item.quantity}</Badge>
+                  <p className="text-sm text-muted-foreground">{item.name}</p>
+                </div>
+              ))}
+              {order.items.length > 3 && <p className="text-xs text-muted-foreground">+{order.items.length - 3} autres articles</p>}
+            </div>
+            <Separator className="mb-3" />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
+                {order.payment_method === 'cash_on_delivery' ? '💵 Paiement à la livraison' : '📱 Payé en ligne'}
+              </span>
+              <span className="font-extrabold text-lg text-foreground">{formatFCFA(order.total)}</span>
+            </div>
+          </CardContent>
+        </Card>
 
         {order.delivery_instructions && (
-          <div className="rounded-2xl p-3.5 flex gap-2" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-            <span className="text-lg shrink-0">📝</span>
-            <p className="text-sm" style={{ color: '#92400E' }}>{order.delivery_instructions}</p>
-          </div>
+          <Card className="border-warning-200 bg-warning-50">
+            <CardContent className="p-3.5 flex gap-2">
+              <span className="text-lg shrink-0">📝</span>
+              <p className="text-sm text-warning-700">{order.delivery_instructions}</p>
+            </CardContent>
+          </Card>
         )}
       </div>
 
       {/* ── CTA ── */}
-      <div className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom" style={{ background: 'rgba(255,255,255,0.97)', borderTop: '1px solid #F1F1F1' }}>
-        <button
+      <div className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom bg-card/97 border-t border-border">
+        <Button
           onClick={advance}
           disabled={updating}
-          className="w-full h-14 rounded-full text-white font-bold text-base tap disabled:opacity-60 flex items-center justify-center gap-2 gradient-flame"
-          style={{ boxShadow: '0 8px 24px rgba(255,97,0,.4)' }}
+          size="lg"
+          className="w-full rounded-full"
         >
-          {updating ? <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <><span>{actionLabel}</span><ArrowRight size={18} /></>}
-        </button>
+          {updating ? <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" /> : <>{actionLabel} <ArrowRight size={18} /></>}
+        </Button>
       </div>
 
       {/* ── CASH MODAL ── */}
       {showCashModal && (
         <div className="fixed inset-0 bg-black/60 flex items-end z-50">
-          <div className="bg-white w-full rounded-t-3xl p-6 space-y-4 safe-bottom">
-            <h2 className="font-extrabold text-xl" style={{ color: '#1C1C1C' }}>Collecte cash</h2>
-            <p className="text-sm" style={{ color: '#717171' }}>Entrez le montant total reçu du client.</p>
-            <input
-              type="number"
-              value={cashAmount}
-              onChange={e => setCashAmount(e.target.value)}
-              placeholder={String(delivery?.order?.total ?? '')}
-              className="w-full px-4 py-4 rounded-2xl text-2xl font-extrabold outline-none"
-              style={{ background: '#F8F8F8', color: '#1C1C1C' }}
-              autoFocus
-            />
-            {cashDebt && cashDebt.amount_owed > 0 && (
-              <div className="rounded-2xl p-3" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-                <p className="text-sm font-bold" style={{ color: '#92400E' }}>Tu dois reverser {formatFCFA(cashDebt.amount_owed)} à {cashDebt.restaurant}</p>
-              </div>
-            )}
-            <button
-              onClick={async () => {
-                const amount = parseInt(cashAmount);
-                if (!amount) { show('Entrez le montant collecté.', 'error'); return; }
-                setUpdating(true);
-                try {
-                  const result = await api.confirmCashCollected(delivery!.id, amount);
-                  setCashDebt({ amount_owed: result.amount_owed, restaurant: result.restaurant });
-                  setShowCashModal(false); setDone(true);
-                  show(result.amount_owed > 0 ? `Reverse ${formatFCFA(result.amount_owed)} à ${result.restaurant}` : 'Livraison terminée !', result.amount_owed > 0 ? 'info' : 'success');
-                } catch (e: any) {
-                  show(e.message || 'Erreur', 'error');
-                } finally { setUpdating(false); }
-              }}
-              disabled={updating}
-              className="w-full h-14 rounded-full text-white font-bold tap disabled:opacity-50 gradient-flame"
-            >
-              {updating ? '...' : "Confirmer la collecte"}
-            </button>
-          </div>
+          <Card className="w-full rounded-t-3xl rounded-b-none border-0 safe-bottom">
+            <CardContent className="p-6 space-y-4">
+              <h2 className="font-extrabold text-xl text-foreground">Collecte cash</h2>
+              <p className="text-sm text-muted-foreground">Entrez le montant total reçu du client.</p>
+              <Input
+                type="number"
+                value={cashAmount}
+                onChange={e => setCashAmount(e.target.value)}
+                placeholder={String(delivery?.order?.total ?? '')}
+                className="text-2xl font-extrabold h-16"
+                autoFocus
+              />
+              {cashDebt && cashDebt.amount_owed > 0 && (
+                <Card className="border-warning-200 bg-warning-50">
+                  <CardContent className="p-3">
+                    <p className="text-sm font-bold text-warning-700">Tu dois reverser {formatFCFA(cashDebt.amount_owed)} à {cashDebt.restaurant}</p>
+                  </CardContent>
+                </Card>
+              )}
+              <Button
+                onClick={async () => {
+                  const amount = parseInt(cashAmount);
+                  if (!amount) { show('Entrez le montant collecté.', 'error'); return; }
+                  setUpdating(true);
+                  try {
+                    const result = await api.confirmCashCollected(delivery!.id, amount);
+                    setCashDebt({ amount_owed: result.amount_owed, restaurant: result.restaurant });
+                    setShowCashModal(false); setDone(true);
+                    show(result.amount_owed > 0 ? `Reverse ${formatFCFA(result.amount_owed)} à ${result.restaurant}` : 'Livraison terminée !', result.amount_owed > 0 ? 'info' : 'success');
+                  } catch (e: any) {
+                    show(e.message || 'Erreur', 'error');
+                  } finally { setUpdating(false); }
+                }}
+                disabled={updating}
+                size="lg"
+                className="w-full rounded-full"
+              >
+                {updating ? '...' : "Confirmer la collecte"}
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>
@@ -344,7 +341,7 @@ function DeliveryMap({ restaurantLat, restaurantLng, clientLat, clientLng }: {
       const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false });
       mapInstance.current = map;
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-      const rIcon = L.divIcon({ html: '<div style="background:#FF6100;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>', iconSize: [14, 14] });
+      const rIcon = L.divIcon({ html: '<div style="background:hsl(24.6,95%,53.1%);width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>', iconSize: [14, 14] });
       const cIcon = L.divIcon({ html: '<div style="background:#22C55E;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>', iconSize: [14, 14] });
       L.marker([restaurantLat, restaurantLng], { icon: rIcon }).addTo(map);
       L.marker([clientLat, clientLng], { icon: cIcon }).addTo(map);

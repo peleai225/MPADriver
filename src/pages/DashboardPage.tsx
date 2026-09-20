@@ -10,6 +10,9 @@ import { vibrate, notify, playAlert, requestNotificationPermission } from '../li
 import type { EarningsSummary, Delivery } from '../lib/types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import { Switch } from '../components/ui/switch';
+import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
+import { Badge } from '../components/ui/badge';
 
 export function DashboardPage() {
   const { driver, refresh } = useAuth();
@@ -79,6 +82,7 @@ export function DashboardPage() {
   const isOnline = driver?.is_available ?? false;
   const ratingNum = driver?.rating != null ? Number(driver.rating) : 5.0;
   const ratingDisplay = ratingNum.toFixed(1);
+  const photoUrl = resolvePhotoUrl(driver?.photo_url);
 
   return (
     <div className="min-h-screen pb-28 bg-background">
@@ -87,24 +91,14 @@ export function DashboardPage() {
       <div className="px-5 pt-safe pt-4 pb-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full gradient-flame flex items-center justify-center shrink-0 overflow-hidden">
-              {resolvePhotoUrl(driver?.photo_url) ? (
-                <img
-                  src={resolvePhotoUrl(driver?.photo_url)!}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  onError={e => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                    const sib = (e.target as HTMLImageElement).nextElementSibling as HTMLElement | null;
-                    if (sib) sib.style.display = 'flex';
-                  }}
-                />
+            <Avatar className="h-12 w-12 gradient-flame">
+              {photoUrl ? (
+                <AvatarImage src={photoUrl} />
               ) : null}
-              <span className="text-white font-extrabold text-xl"
-                style={{ display: resolvePhotoUrl(driver?.photo_url) ? 'none' : undefined }}>
+              <AvatarFallback className="bg-transparent text-white font-extrabold text-xl">
                 {driver?.name?.[0]?.toUpperCase() ?? 'L'}
-              </span>
-            </div>
+              </AvatarFallback>
+            </Avatar>
             <div>
               <p className="text-sm text-muted-foreground">Bonjour 👋</p>
               <p className="font-extrabold text-xl leading-tight text-foreground">
@@ -114,9 +108,9 @@ export function DashboardPage() {
           </div>
 
           <div className="relative">
-            <div className="w-11 h-11 rounded-full bg-card flex items-center justify-center tap shadow-soft">
+            <Button variant="outline" size="icon" className="rounded-full h-11 w-11 shadow-soft">
               <span className="text-xl">🔔</span>
-            </div>
+            </Button>
             <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary" />
           </div>
         </div>
@@ -124,68 +118,67 @@ export function DashboardPage() {
 
       {/* ── STAT CARDS ── */}
       <div className="px-5 mt-4 grid grid-cols-2 gap-3">
-        <div className="rounded-3xl p-4 overflow-hidden relative gradient-flame" style={{ minHeight: '140px' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 bg-white/25">
-            <TrendingUp size={18} className="text-white" />
-          </div>
-          <p className="text-white/80 text-xs mb-1">Gains aujourd'hui</p>
-          <p className="text-white font-extrabold text-2xl leading-tight">{formatFCFA(earnings?.today ?? 0)}</p>
-          <p className="text-white/60 text-[11px] mt-1">
-            {earnings?.deliveries_today ?? 0} course{(earnings?.deliveries_today ?? 0) !== 1 ? 's' : ''}
-          </p>
-          <svg className="absolute bottom-0 left-0 right-0 w-full" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
-            <path d="M0,20 Q25,5 50,20 T100,20 T150,20 T200,20 L200,40 L0,40 Z" fill="rgba(255,255,255,0.1)" />
-          </svg>
-        </div>
+        <Card className="overflow-hidden border-0 gradient-brand" style={{ minHeight: '140px' }}>
+          <CardContent className="p-4 relative">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 bg-white/25">
+              <TrendingUp size={18} className="text-white" />
+            </div>
+            <p className="text-white/80 text-xs mb-1">Gains aujourd'hui</p>
+            <p className="text-white font-extrabold text-2xl leading-tight">{formatFCFA(earnings?.today ?? 0)}</p>
+            <p className="text-white/60 text-[11px] mt-1">
+              {earnings?.deliveries_today ?? 0} course{(earnings?.deliveries_today ?? 0) !== 1 ? 's' : ''}
+            </p>
+            <svg className="absolute bottom-0 left-0 right-0 w-full" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
+              <path d="M0,20 Q25,5 50,20 T100,20 T150,20 T200,20 L200,40 L0,40 Z" fill="rgba(255,255,255,0.1)" />
+            </svg>
+          </CardContent>
+        </Card>
 
-        <div className="rounded-3xl p-4 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #3B2D8F, #2D1F6E)', minHeight: '140px' }}>
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 bg-white/15">
-            <Wallet size={18} className="text-white" />
-          </div>
-          <p className="text-white/70 text-xs mb-1">Solde disponible</p>
-          <p className="text-white font-extrabold text-2xl leading-tight">{formatFCFA(earnings?.balance_available ?? 0)}</p>
-          <p className="text-white/50 text-[11px] mt-1">{earnings?.deliveries_today ?? 0} courses aujourd'hui</p>
-          <div className="absolute bottom-3 right-3 opacity-20">
-            <Wallet size={44} className="text-white" />
-          </div>
-        </div>
+        <Card className="overflow-hidden border-0 bg-foreground" style={{ minHeight: '140px' }}>
+          <CardContent className="p-4 relative">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 bg-white/15">
+              <Wallet size={18} className="text-white" />
+            </div>
+            <p className="text-white/70 text-xs mb-1">Solde disponible</p>
+            <p className="text-white font-extrabold text-2xl leading-tight">{formatFCFA(earnings?.balance_available ?? 0)}</p>
+            <p className="text-white/50 text-[11px] mt-1">{earnings?.deliveries_today ?? 0} courses aujourd'hui</p>
+            <div className="absolute bottom-3 right-3 opacity-20">
+              <Wallet size={44} className="text-white" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="px-5 mt-3 space-y-3">
 
         {/* ── TOGGLE EN LIGNE ── */}
-        <button
-          onClick={toggleOnline}
-          disabled={togglingOnline || !!activeDelivery}
-          className="w-full rounded-3xl p-4 flex items-center gap-3 tap disabled:opacity-60 overflow-hidden relative transition-all"
-          style={{
-            background: isOnline ? 'linear-gradient(135deg, #FF6100, #FF8C00)' : 'hsl(var(--card))',
-            boxShadow: isOnline ? '0 8px 24px rgba(255,97,0,.3)' : '0 2px 12px rgba(0,0,0,0.06)',
-            border: isOnline ? 'none' : '1px solid hsl(var(--border))',
-          }}
-        >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: isOnline ? 'rgba(255,255,255,0.25)' : 'hsl(var(--muted))' }}>
-            <span className="w-4 h-4 rounded-full" style={{
-              background: isOnline ? '#22C55E' : 'hsl(var(--muted-foreground))',
-              boxShadow: isOnline ? '0 0 0 3px rgba(34,197,94,0.3)' : 'none',
-            }} />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="font-extrabold text-base" style={{ color: isOnline ? '#FFFFFF' : 'hsl(var(--foreground))' }}>
-              {togglingOnline ? 'Mise à jour...' : isOnline ? 'En ligne' : 'Hors ligne'}
-            </p>
-            <p className="text-sm" style={{ color: isOnline ? 'rgba(255,255,255,0.75)' : 'hsl(var(--muted-foreground))' }}>
-              {isOnline ? 'Vous recevez des courses' : 'Appuyez pour passer en ligne'}
-            </p>
-          </div>
-          {isOnline && <span className="text-4xl absolute right-16 top-1/2 -translate-y-1/2 opacity-90 select-none">🛵</span>}
-          <div className="rounded-full relative shrink-0 transition-all"
-            style={{ background: isOnline ? 'rgba(255,255,255,0.35)' : 'hsl(var(--muted))', width: '52px', height: '28px' }}>
-            <div className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-300"
-              style={{ left: isOnline ? '24px' : '2px' }} />
-          </div>
-        </button>
+        <Card className={isOnline ? 'border-0 gradient-brand shadow-pop' : ''}>
+          <CardContent className="p-4">
+            <button
+              onClick={toggleOnline}
+              disabled={togglingOnline || !!activeDelivery}
+              className="w-full flex items-center gap-3 tap disabled:opacity-60"
+            >
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isOnline ? 'bg-white/25' : 'bg-muted'}`}>
+                <span className={`w-4 h-4 rounded-full ${isOnline ? 'bg-success-500 shadow-[0_0_0_3px_rgba(34,197,94,0.3)]' : 'bg-muted-foreground'}`} />
+              </div>
+              <div className="flex-1 text-left">
+                <p className={`font-extrabold text-base ${isOnline ? 'text-white' : 'text-foreground'}`}>
+                  {togglingOnline ? 'Mise à jour...' : isOnline ? 'En ligne' : 'Hors ligne'}
+                </p>
+                <p className={`text-sm ${isOnline ? 'text-white/75' : 'text-muted-foreground'}`}>
+                  {isOnline ? 'Vous recevez des courses' : 'Appuyez pour passer en ligne'}
+                </p>
+              </div>
+              {isOnline && <span className="text-4xl opacity-90 select-none">🛵</span>}
+              <Switch
+                checked={isOnline}
+                disabled={togglingOnline || !!activeDelivery}
+                className={isOnline ? 'bg-white/35' : ''}
+              />
+            </button>
+          </CardContent>
+        </Card>
 
         {/* ── COURSE ACTIVE ── */}
         {activeDelivery && (
@@ -209,30 +202,32 @@ export function DashboardPage() {
         {/* ── COURSES DISPONIBLES ── */}
         {!activeDelivery && (
           <Card>
-            <button
-              onClick={() => isOnline ? go({ name: 'deliveries' }) : undefined}
-              className="w-full px-4 py-3 flex items-center gap-3 tap"
-            >
-              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-primary/10 relative">
-                <Package size={21} className="text-primary" />
-                {pendingCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center bg-primary">
-                    {pendingCount > 9 ? '9+' : pendingCount}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1 text-left">
-                <p className="font-bold text-base text-foreground">Courses disponibles</p>
-                <p className="text-sm text-muted-foreground">
-                  {pendingCount > 0
-                    ? `${pendingCount} course${pendingCount > 1 ? 's' : ''} en attente`
-                    : 'Aucune course pour le moment'}
-                </p>
-              </div>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted">
-                <ChevronRight size={16} className="text-muted-foreground" />
-              </div>
-            </button>
+            <CardContent className="p-0">
+              <button
+                onClick={() => isOnline ? go({ name: 'deliveries' }) : undefined}
+                className="w-full px-4 py-3 flex items-center gap-3 tap"
+              >
+                <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-primary/10 relative">
+                  <Package size={21} className="text-primary" />
+                  {pendingCount > 0 && (
+                    <Badge className="absolute -top-1.5 -right-1.5 h-5 w-5 p-0 justify-center text-[9px]">
+                      {pendingCount > 9 ? '9+' : pendingCount}
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-bold text-base text-foreground">Courses disponibles</p>
+                  <p className="text-sm text-muted-foreground">
+                    {pendingCount > 0
+                      ? `${pendingCount} course${pendingCount > 1 ? 's' : ''} en attente`
+                      : 'Aucune course pour le moment'}
+                  </p>
+                </div>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted">
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </div>
+              </button>
+            </CardContent>
           </Card>
         )}
 
@@ -241,9 +236,9 @@ export function DashboardPage() {
           <CardContent className="pt-4">
             <div className="flex items-center justify-between mb-4">
               <p className="font-extrabold text-base text-foreground">Cette semaine</p>
-              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
-                7 jours <ChevronRight size={12} className="rotate-90" />
-              </div>
+              <Badge variant="muted">
+                7 jours <ChevronRight size={12} className="rotate-90 ml-0.5" />
+              </Badge>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
@@ -253,7 +248,7 @@ export function DashboardPage() {
                 </div>
                 <p className="font-extrabold text-xl text-foreground">{earnings?.deliveries_today ?? 0}</p>
                 <p className="text-xs mt-0.5 text-muted-foreground">Courses</p>
-                <p className="text-xs font-bold mt-0.5 text-primary">Auj.</p>
+                <Badge variant="outline" className="mt-1 text-[10px] px-1.5 py-0 h-4 text-primary border-primary/30">Auj.</Badge>
               </div>
 
               <div className="text-center border-x border-border">
@@ -262,7 +257,7 @@ export function DashboardPage() {
                 </div>
                 <p className="font-extrabold text-xl text-foreground">{formatFCFA(earnings?.this_week ?? 0)}</p>
                 <p className="text-xs mt-0.5 text-muted-foreground">Gains</p>
-                <p className="text-xs font-bold mt-0.5 text-primary">Semaine</p>
+                <Badge variant="outline" className="mt-1 text-[10px] px-1.5 py-0 h-4 text-primary border-primary/30">Semaine</Badge>
               </div>
 
               <div className="text-center">
@@ -282,18 +277,20 @@ export function DashboardPage() {
         </Card>
 
         {/* ── MOTIVATION BANNER ── */}
-        <div className="rounded-3xl p-4 flex items-center gap-3 bg-primary/5 border border-primary/15">
-          <span className="text-3xl shrink-0">🏆</span>
-          <div className="flex-1 min-w-0">
-            <p className="font-extrabold text-sm text-foreground">Excellent travail !</p>
-            <p className="text-xs mt-0.5 text-muted-foreground">
-              Continuez ainsi pour débloquer plus d'avantages.
-            </p>
-          </div>
-          <Button size="sm" onClick={() => go({ name: 'earnings' })} className="shrink-0">
-            Voir mes stats
-          </Button>
-        </div>
+        <Card className="border-primary/15 bg-primary/5">
+          <CardContent className="p-4 flex items-center gap-3">
+            <span className="text-3xl shrink-0">🏆</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-extrabold text-sm text-foreground">Excellent travail !</p>
+              <p className="text-xs mt-0.5 text-muted-foreground">
+                Continuez ainsi pour débloquer plus d'avantages.
+              </p>
+            </div>
+            <Button size="sm" onClick={() => go({ name: 'earnings' })} className="shrink-0">
+              Voir mes stats
+            </Button>
+          </CardContent>
+        </Card>
 
       </div>
     </div>

@@ -10,8 +10,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetCloseButton } from '
 import { Separator } from '../components/ui/separator';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
-
-const ORANGE = '#FF6100';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Skeleton } from '../components/ui/skeleton';
 
 export function EarningsPage() {
   const { driver } = useAuth();
@@ -74,34 +76,33 @@ export function EarningsPage() {
   };
 
   return (
-    <div className="min-h-screen pb-28 bg-paper">
+    <div className="min-h-screen pb-28 bg-background">
 
-      {/* ── HEADER ── */}
       <PageHeader title="Gains" subtitle="Votre tableau de bord financier" />
 
       <div className="px-5 mt-3 space-y-3">
 
         {/* ── HERO SOLDE ── */}
-        <div
-          className="rounded-3xl p-5 overflow-hidden relative"
-          style={{ background: `linear-gradient(135deg, #FF3301, ${ORANGE})`, boxShadow: '0 8px 32px rgba(255,97,0,.35)' }}
-        >
-          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none" style={{ background: 'rgba(255,255,255,0.1)' }} />
-          <div className="absolute bottom-0 right-0 opacity-10"><Wallet size={80} className="text-white" /></div>
+        <Card className="overflow-hidden border-0 gradient-brand shadow-pop">
+          <CardContent className="p-5 relative">
+            <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none bg-white/10" />
+            <div className="absolute bottom-0 right-0 opacity-10"><Wallet size={80} className="text-white" /></div>
 
-          <p className="text-white/70 text-xs mb-1 relative">Solde disponible</p>
-          <p className="text-white font-extrabold text-4xl relative">{formatFCFA(summary?.balance_available ?? 0)}</p>
-          <p className="text-white/50 text-xs mt-1 relative">{summary?.deliveries_total ?? 0} livraison{(summary?.deliveries_total ?? 0) !== 1 ? 's' : ''} au total</p>
+            <p className="text-white/70 text-xs mb-1 relative">Solde disponible</p>
+            <p className="text-white font-extrabold text-4xl relative">{formatFCFA(summary?.balance_available ?? 0)}</p>
+            <p className="text-white/50 text-xs mt-1 relative">{summary?.deliveries_total ?? 0} livraison{(summary?.deliveries_total ?? 0) !== 1 ? 's' : ''} au total</p>
 
-          <button
-            onClick={() => setShowPayout(true)}
-            disabled={!summary || summary.balance_available < 500}
-            className="mt-4 relative inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold tap disabled:opacity-40"
-            style={{ background: 'rgba(255,255,255,0.2)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.3)' }}
-          >
-            💸 Demander un virement Wave
-          </button>
-        </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowPayout(true)}
+              disabled={!summary || summary.balance_available < 500}
+              className="mt-4 relative bg-white/20 text-white border border-white/30 hover:bg-white/30"
+            >
+              💸 Demander un virement Wave
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* ── STATS GRID ── */}
         <div className="grid grid-cols-2 gap-2">
@@ -111,95 +112,98 @@ export function EarningsPage() {
             { label: 'Ce mois', value: summary?.this_month ?? 0, icon: '🗓️' },
             { label: 'Total cumulé', value: summary?.total_lifetime ?? 0, icon: '🏆' },
           ].map(s => (
-            <div key={s.label} className="rounded-2xl p-3.5" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #EEEEEE' }}>
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-sm">{s.icon}</span>
-                <p className="text-xs" style={{ color: '#A0A0A0' }}>{s.label}</p>
-              </div>
-              <p className="font-extrabold text-lg leading-tight" style={{ color: '#1C1C1C' }}>{formatFCFA(s.value)}</p>
-            </div>
+            <Card key={s.label}>
+              <CardContent className="p-3.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-sm">{s.icon}</span>
+                  <p className="text-xs text-muted-foreground">{s.label}</p>
+                </div>
+                <p className="font-extrabold text-lg leading-tight text-foreground">{formatFCFA(s.value)}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
         {/* ── DETTES CASH ── */}
         {cashBalance && cashBalance.total_owed_xof > 0 && (
-          <div className="rounded-3xl p-4" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">⚠️</span>
-                <p className="font-bold text-sm" style={{ color: '#92400E' }}>Argent à reverser</p>
-              </div>
-              <p className="font-extrabold text-lg" style={{ color: '#D97706' }}>{formatFCFA(cashBalance.total_owed_xof)}</p>
-            </div>
-            <div className="space-y-2">
-              {cashBalance.debts.map((debt: any) => (
-                <div key={debt.id} className="bg-white rounded-2xl p-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: '#1C1C1C' }}>{debt.restaurant_name}</p>
-                    <p className="text-xs" style={{ color: '#A0A0A0' }}>Cmd {debt.order_ref}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-sm" style={{ color: '#1C1C1C' }}>{formatFCFA(debt.amount_xof)}</p>
-                    <button onClick={() => { setSelectedDebt(debt); setShowRemittance(true); }} className="text-xs font-bold tap" style={{ color: ORANGE }}>
-                      Déclarer →
-                    </button>
-                  </div>
+          <Card className="border-warning-200 bg-warning-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">⚠️</span>
+                  <p className="font-bold text-sm text-warning-700">Argent à reverser</p>
                 </div>
-              ))}
-            </div>
-          </div>
+                <p className="font-extrabold text-lg text-warning-600">{formatFCFA(cashBalance.total_owed_xof)}</p>
+              </div>
+              <div className="space-y-2">
+                {cashBalance.debts.map((debt: any) => (
+                  <Card key={debt.id}>
+                    <CardContent className="p-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">{debt.restaurant_name}</p>
+                        <p className="text-xs text-muted-foreground">Cmd {debt.order_ref}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm text-foreground">{formatFCFA(debt.amount_xof)}</p>
+                        <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => { setSelectedDebt(debt); setShowRemittance(true); }}>
+                          Déclarer →
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* ── HISTORIQUE ── */}
         <div>
           <div className="flex items-center gap-2 mb-3">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ background: ORANGE }} />
-            <p className="font-extrabold text-base" style={{ color: '#1C1C1C' }}>Historique des gains</p>
+            <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+            <p className="font-extrabold text-base text-foreground">Historique des gains</p>
           </div>
 
           {loading ? (
-            [0, 1, 2].map(i => <div key={i} className="h-16 rounded-2xl skeleton mb-2" />)
+            <div className="space-y-2">
+              <Skeleton className="h-16 rounded-2xl" />
+              <Skeleton className="h-16 rounded-2xl" />
+              <Skeleton className="h-16 rounded-2xl" />
+            </div>
           ) : history.length === 0 ? (
             <div className="flex flex-col items-center py-10 text-center">
               <span className="text-5xl mb-3">💰</span>
-              <p className="font-bold" style={{ color: '#1C1C1C' }}>Aucun gain pour le moment</p>
-              <p className="text-sm mt-1" style={{ color: '#A0A0A0' }}>Vos gains apparaîtront ici après chaque livraison.</p>
+              <p className="font-bold text-foreground">Aucun gain pour le moment</p>
+              <p className="text-sm mt-1 text-muted-foreground">Vos gains apparaîtront ici après chaque livraison.</p>
             </div>
           ) : (
             <div className="space-y-2">
               {history.map(e => (
-                <div key={e.id} className="rounded-2xl p-3.5 flex items-center gap-3" style={{ background: '#FFFFFF', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', border: '1px solid #EEEEEE' }}>
-                  <div
-                    className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
-                    style={{ background: e.status === 'paid' ? '#F0FDF4' : 'rgba(255,97,0,0.1)' }}
-                  >
-                    <Wallet size={18} style={{ color: e.status === 'paid' ? '#16A34A' : ORANGE }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm" style={{ color: '#1C1C1C' }}>{e.order?.reference ?? `#${e.id}`}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <Clock size={10} style={{ color: '#A0A0A0' }} />
-                      <p className="text-xs" style={{ color: '#A0A0A0' }}>{formatDate(e.created_at)}</p>
+                <Card key={e.id}>
+                  <CardContent className="p-3.5 flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${e.status === 'paid' ? 'bg-success-50' : 'bg-primary/10'}`}>
+                      <Wallet size={18} className={e.status === 'paid' ? 'text-success-600' : 'text-primary'} />
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-extrabold text-base" style={{ color: '#22C55E' }}>+{formatFCFA(e.net_amount)}</p>
-                    <span
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{
-                        background: e.status === 'paid' ? '#F0FDF4' : 'rgba(255,97,0,0.1)',
-                        color: e.status === 'paid' ? '#16A34A' : ORANGE,
-                      }}
-                    >
-                      {e.status === 'paid' ? 'Viré' : 'Disponible'}
-                    </span>
-                  </div>
-                </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm text-foreground">{e.order?.reference ?? `#${e.id}`}</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <Clock size={10} className="text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground">{formatDate(e.created_at)}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-extrabold text-base text-success-500">+{formatFCFA(e.net_amount)}</p>
+                      <Badge variant={e.status === 'paid' ? 'success' : 'default'} className="text-[10px]">
+                        {e.status === 'paid' ? 'Viré' : 'Disponible'}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
               ))}
               {page < lastPage && (
-                <button onClick={loadMore} className="w-full py-3 text-sm font-semibold tap flex items-center justify-center gap-1" style={{ color: ORANGE }}>
+                <Button variant="ghost" className="w-full" onClick={loadMore}>
                   <ChevronDown size={16} /> Voir plus
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -214,13 +218,15 @@ export function EarningsPage() {
             <SheetCloseButton />
           </SheetHeader>
           <div className="px-6 pb-6 space-y-4">
-            <div className="rounded-2xl p-3 flex items-center gap-3" style={{ background: 'rgba(255,97,0,0.08)' }}>
-              <span className="text-2xl">💳</span>
-              <div>
-                <p className="text-xs font-semibold" style={{ color: ORANGE }}>Solde disponible</p>
-                <p className="font-extrabold text-lg" style={{ color: '#1C1C1C' }}>{formatFCFA(summary?.balance_available ?? 0)}</p>
-              </div>
-            </div>
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="p-3 flex items-center gap-3">
+                <span className="text-2xl">💳</span>
+                <div>
+                  <p className="text-xs font-semibold text-primary">Solde disponible</p>
+                  <p className="font-extrabold text-lg text-foreground">{formatFCFA(summary?.balance_available ?? 0)}</p>
+                </div>
+              </CardContent>
+            </Card>
             <Separator />
             <div>
               <Label htmlFor="payout-amount">Montant (FCFA) *</Label>
@@ -230,15 +236,10 @@ export function EarningsPage() {
               <Label htmlFor="payout-phone">Numéro Wave *</Label>
               <Input id="payout-phone" type="tel" value={payoutPhone} onChange={e => setPayoutPhone(e.target.value)} placeholder="0701234567" />
             </div>
-            <p className="text-xs" style={{ color: '#A0A0A0' }}>Maximum 3 virements par jour. Traitement sous 24h.</p>
-            <button
-              onClick={handlePayout}
-              disabled={payoutLoading}
-              className="w-full h-13 rounded-2xl text-white font-bold tap disabled:opacity-60 flex items-center justify-center gap-2 gradient-flame"
-              style={{ boxShadow: '0 8px 24px rgba(255,97,0,.3)' }}
-            >
-              {payoutLoading ? <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : 'Confirmer le virement'}
-            </button>
+            <p className="text-xs text-muted-foreground">Maximum 3 virements par jour. Traitement sous 24h.</p>
+            <Button onClick={handlePayout} disabled={payoutLoading} className="w-full" size="lg">
+              {payoutLoading ? <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" /> : 'Confirmer le virement'}
+            </Button>
           </div>
         </SheetContent>
       </Sheet>
@@ -252,14 +253,20 @@ export function EarningsPage() {
           </SheetHeader>
           <div className="px-6 pb-6 space-y-4">
             {selectedDebt && (
-              <div className="rounded-2xl p-3" style={{ background: '#FFFBEB', border: '1px solid #FDE68A' }}>
-                <p className="text-sm font-bold" style={{ color: '#92400E' }}>{selectedDebt.restaurant_name}</p>
-                <p className="font-extrabold text-lg" style={{ color: '#D97706' }}>{formatFCFA(selectedDebt.amount_xof)}</p>
-              </div>
+              <Card className="border-warning-200 bg-warning-50">
+                <CardContent className="p-3">
+                  <p className="text-sm font-bold text-warning-700">{selectedDebt.restaurant_name}</p>
+                  <p className="font-extrabold text-lg text-warning-600">{formatFCFA(selectedDebt.amount_xof)}</p>
+                </CardContent>
+              </Card>
             )}
             <div>
               <Label>Moyen de paiement</Label>
-              <select value={remitMethod} onChange={e => setRemitMethod(e.target.value)} className="w-full mt-1 px-4 py-3 border border-ink-200 rounded-xl text-sm">
+              <select
+                value={remitMethod}
+                onChange={e => setRemitMethod(e.target.value)}
+                className="w-full mt-1.5 h-13 px-4 rounded-xl border border-input bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <option value="wave">Wave</option>
                 <option value="orange_money">Orange Money</option>
                 <option value="mtn_money">MTN MoMo</option>
@@ -272,13 +279,9 @@ export function EarningsPage() {
                 <Input value={remitRef} onChange={e => setRemitRef(e.target.value)} placeholder="Ex: W123456789" />
               </div>
             )}
-            <button
-              onClick={handleRemit}
-              disabled={remitLoading}
-              className="w-full h-13 rounded-2xl text-white font-bold tap disabled:opacity-60 gradient-flame"
-            >
+            <Button onClick={handleRemit} disabled={remitLoading} className="w-full" size="lg">
               {remitLoading ? '...' : 'Confirmer le reversement'}
-            </button>
+            </Button>
           </div>
         </SheetContent>
       </Sheet>

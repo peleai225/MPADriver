@@ -33,7 +33,7 @@ const SheetContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed z-50 bg-white shadow-xl focus:outline-none',
+        'fixed z-50 bg-card shadow-xl focus:outline-none',
         side === 'bottom' && [
           'bottom-0 inset-x-0 rounded-t-3xl pb-[env(safe-area-inset-bottom,1rem)]',
           'data-[state=open]:animate-slide-up data-[state=closed]:animate-slide-down',
@@ -44,7 +44,7 @@ const SheetContent = React.forwardRef<
       {...props}
     >
       {side === 'bottom' && (
-        <div className="mx-auto w-10 h-1 rounded-full bg-ink-200 mt-3 mb-1" />
+        <div className="mx-auto w-10 h-1 rounded-full bg-border mt-3 mb-1" />
       )}
       {children}
     </DialogPrimitive.Content>
@@ -60,14 +60,14 @@ const SheetTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Title ref={ref} className={cn('font-bold text-ink-900 text-lg', className)} {...props} />
+  <DialogPrimitive.Title ref={ref} className={cn('font-bold text-foreground text-lg', className)} {...props} />
 ));
 SheetTitle.displayName = DialogPrimitive.Title.displayName;
 
 const SheetCloseButton = () => (
   <SheetClose asChild>
-    <button className="w-8 h-8 rounded-full bg-ink-100 grid place-items-center tap hover:bg-ink-200 transition-colors">
-      <X size={16} className="text-ink-500" />
+    <button className="w-8 h-8 rounded-full bg-muted grid place-items-center tap hover:bg-accent transition-colors">
+      <X size={16} className="text-muted-foreground" />
     </button>
   </SheetClose>
 );

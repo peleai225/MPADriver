@@ -5,6 +5,7 @@ import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -40,22 +41,16 @@ export function LoginPage() {
 
       {/* ── HERO (55%) ── */}
       <div className="relative flex-none h-[55vh] flex flex-col justify-end px-6 pb-10 safe-top overflow-hidden">
-        {/* Bulles déco */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-6 right-4 w-32 h-32 rounded-full opacity-25"
-            style={{ background: 'radial-gradient(circle, #FF6100, #FF3301)' }} />
-          <div className="absolute top-20 right-24 w-16 h-16 rounded-full opacity-15"
-            style={{ background: 'radial-gradient(circle, #FF6100, #FF3301)' }} />
-          <div className="absolute top-10 left-1/2 w-10 h-10 rounded-full opacity-20"
-            style={{ background: 'radial-gradient(circle, #FF8C00, #FF3301)' }} />
-          <div className="absolute bottom-16 right-8 w-20 h-20 rounded-full opacity-10"
-            style={{ background: 'radial-gradient(circle, #FF6100, transparent)' }} />
-          <div className="absolute top-1/3 left-6 w-8 h-8 rounded-full opacity-15"
-            style={{ background: 'radial-gradient(circle, #FF6100, #FF3301)' }} />
+          <div className="absolute top-6 right-4 w-32 h-32 rounded-full opacity-25 bg-primary" />
+          <div className="absolute top-20 right-24 w-16 h-16 rounded-full opacity-15 bg-primary" />
+          <div className="absolute top-10 left-1/2 w-10 h-10 rounded-full opacity-20 bg-primary" />
+          <div className="absolute bottom-16 right-8 w-20 h-20 rounded-full opacity-10 bg-primary" />
+          <div className="absolute top-1/3 left-6 w-8 h-8 rounded-full opacity-15 bg-primary" />
         </div>
 
         <div className="relative">
-          <p className="text-foreground/60 text-base font-medium mb-1">Bonjour,</p>
+          <p className="text-white/60 text-base font-medium mb-1">Bonjour,</p>
           <h1 className="text-white font-extrabold text-4xl leading-tight">
             Connectez-<br/>vous !
           </h1>
@@ -63,19 +58,18 @@ export function LoginPage() {
       </div>
 
       {/* ── CARD BLANCHE ── */}
-      <div className="flex-1 rounded-t-[2.5rem] -mt-6 px-6 pt-8 pb-10 flex flex-col bg-card"
-        style={{ boxShadow: '0 -8px 40px rgba(0,0,0,0.15)' }}>
+      <div className="flex-1 rounded-t-[2.5rem] -mt-6 px-6 pt-8 pb-10 flex flex-col bg-card shadow-card">
 
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <img src="/logo.png" alt="MENUPRO Livraison" className="h-12 object-contain" />
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 gap-6">
 
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-foreground">Téléphone</p>
+          <div className="space-y-1.5">
+            <Label htmlFor="login-phone">Téléphone</Label>
             <Input
+              id="login-phone"
               type="tel"
               value={phone}
               onChange={e => setPhone(e.target.value)}
@@ -83,19 +77,20 @@ export function LoginPage() {
             />
           </div>
 
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-foreground">Mot de passe</p>
+          <div className="space-y-1.5">
+            <Label htmlFor="login-password">Mot de passe</Label>
             <Input
+              id="login-password"
               type={showPwd ? 'text' : 'password'}
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="••••••••"
               rightIcon={
-                <button type="button" onClick={() => setShowPwd(v => !v)} className="tap">
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowPwd(v => !v)}>
                   {showPwd
                     ? <EyeOff size={18} className="text-muted-foreground" />
                     : <Eye size={18} className="text-muted-foreground" />}
-                </button>
+                </Button>
               }
             />
           </div>
@@ -110,13 +105,14 @@ export function LoginPage() {
 
           <p className="text-center text-sm text-muted-foreground">
             Pas encore livreur ?{' '}
-            <button
+            <Button
               type="button"
+              variant="link"
+              className="p-0 h-auto font-bold"
               onClick={() => push({ name: 'register' })}
-              className="font-bold tap text-primary"
             >
               S'inscrire
-            </button>
+            </Button>
           </p>
         </form>
       </div>

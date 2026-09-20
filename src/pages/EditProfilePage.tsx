@@ -6,8 +6,13 @@ import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
 import { compressImage } from '../lib/imageUtils';
 import { resolvePhotoUrl } from '../lib/format';
+import { cn } from '../lib/utils';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent } from '../components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 
-const ORANGE = '#FF6100';
 const CITIES = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
 const VEHICLES = [
   { value: 'moto',    label: 'Moto',    emoji: '🏍️' },
@@ -58,20 +63,18 @@ export function EditProfilePage() {
   const avatarSrc = photo ? URL.createObjectURL(photo) : resolvePhotoUrl(driver.photo_url);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#F5F0EB' }}>
+    <div className="min-h-screen flex flex-col bg-background">
 
       {/* ── HEADER ── */}
-      <div
-        className="flex items-center gap-3 px-5 pb-4 safe-top pt-4"
-        style={{ background: '#1C1C1C' }}
-      >
-        <button
+      <div className="flex items-center gap-3 px-5 pb-4 safe-top pt-4 bg-foreground">
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={pop}
-          className="w-10 h-10 rounded-full flex items-center justify-center tap shrink-0"
-          style={{ background: 'rgba(255,255,255,0.1)' }}
+          className="rounded-full bg-white/10 text-white hover:bg-white/20"
         >
-          <ChevronLeft size={20} className="text-white" />
-        </button>
+          <ChevronLeft size={20} />
+        </Button>
         <div className="flex-1">
           <h1 className="text-white font-extrabold text-lg">Modifier le profil</h1>
           <p className="text-white/40 text-xs">Mettez vos informations à jour</p>
@@ -88,134 +91,94 @@ export function EditProfilePage() {
               type="file" accept="image/*" capture="user" className="hidden"
               onChange={e => e.target.files?.[0] && setPhoto(e.target.files[0])}
             />
-            <div
-              className="w-24 h-24 rounded-3xl overflow-hidden flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, #FF3301, ${ORANGE})`, boxShadow: '0 8px 24px rgba(255,97,0,.35)' }}
-            >
+            <Avatar className="h-24 w-24 rounded-3xl gradient-brand shadow-pop">
               {avatarSrc
-                ? <img src={avatarSrc} alt="avatar" className="w-full h-full object-cover" />
-                : <span className="text-white font-extrabold text-4xl">{driver.name[0].toUpperCase()}</span>}
-            </div>
-            {/* Badge caméra */}
-            <div
-              className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-white shadow-md"
-              style={{ background: ORANGE }}
-            >
+                ? <AvatarImage src={avatarSrc} alt="avatar" className="rounded-3xl" />
+                : null}
+              <AvatarFallback className="rounded-3xl bg-transparent text-white font-extrabold text-4xl">
+                {driver.name[0].toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center border-2 border-card bg-primary shadow-md">
               <Camera size={14} className="text-white" />
             </div>
           </label>
 
           {photo ? (
-            <div className="flex items-center gap-1.5 mt-3 text-xs font-semibold" style={{ color: '#22C55E' }}>
+            <div className="flex items-center gap-1.5 mt-3 text-xs font-semibold text-success-600">
               <CheckCircle2 size={13} /> Nouvelle photo sélectionnée
             </div>
           ) : (
-            <p className="mt-3 text-xs" style={{ color: '#A0A0A0' }}>Appuyez pour changer la photo</p>
+            <p className="mt-3 text-xs text-muted-foreground">Appuyez pour changer la photo</p>
           )}
         </div>
 
         <div className="space-y-4">
 
-          {/* NOM */}
-          <FieldGroup label="Nom complet *">
-            <input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Kouamé Brou"
-              className="flex-1 bg-transparent text-sm font-medium outline-none"
-              style={{ color: '#1C1C1C' }}
-            />
-          </FieldGroup>
+          <div className="space-y-1.5">
+            <Label>Nom complet *</Label>
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Kouamé Brou" />
+          </div>
 
-          {/* VILLE */}
-          <FieldGroup label="Ville de base *">
+          <div className="space-y-1.5">
+            <Label>Ville de base *</Label>
             <select
               value={city}
               onChange={e => setCity(e.target.value)}
-              className="flex-1 bg-transparent text-sm font-medium outline-none"
-              style={{ color: '#1C1C1C' }}
+              className="w-full h-13 px-4 rounded-xl border border-input bg-background text-foreground text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-          </FieldGroup>
+          </div>
 
-          {/* ZONE */}
-          <FieldGroup label="Commune / Zone">
-            <input
-              value={zone}
-              onChange={e => setZone(e.target.value)}
-              placeholder="Ex: Cocody, Plateau..."
-              className="flex-1 bg-transparent text-sm font-medium outline-none"
-              style={{ color: '#1C1C1C' }}
-            />
-          </FieldGroup>
+          <div className="space-y-1.5">
+            <Label>Commune / Zone</Label>
+            <Input value={zone} onChange={e => setZone(e.target.value)} placeholder="Ex: Cocody, Plateau..." />
+          </div>
 
-          {/* VÉHICULE */}
           <div>
-            <p className="text-xs font-semibold mb-2" style={{ color: '#717171' }}>Type de véhicule *</p>
+            <Label className="mb-2">Type de véhicule *</Label>
             <div className="grid grid-cols-3 gap-2">
               {VEHICLES.map(v => (
-                <button
+                <Card
                   key={v.value}
+                  className={cn(
+                    'cursor-pointer tap border-2 transition-all',
+                    vehicleType === v.value ? 'border-primary bg-primary/5' : 'border-border',
+                  )}
                   onClick={() => setVehicleType(v.value as 'moto' | 'velo' | 'voiture')}
-                  className="flex flex-col items-center gap-1.5 py-4 rounded-2xl border-2 tap transition-all"
-                  style={{
-                    background: vehicleType === v.value ? 'rgba(255,97,0,0.06)' : '#FFFFFF',
-                    borderColor: vehicleType === v.value ? ORANGE : '#E4E4E4',
-                  }}
                 >
-                  <span className="text-3xl">{v.emoji}</span>
-                  <span className="text-xs font-bold" style={{ color: vehicleType === v.value ? ORANGE : '#717171' }}>
-                    {v.label}
-                  </span>
-                </button>
+                  <CardContent className="flex flex-col items-center gap-1.5 py-4 px-2">
+                    <span className="text-3xl">{v.emoji}</span>
+                    <span className={cn('text-xs font-bold', vehicleType === v.value ? 'text-primary' : 'text-muted-foreground')}>
+                      {v.label}
+                    </span>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </div>
 
-          {/* PLAQUE */}
-          <FieldGroup label="Plaque d'immatriculation">
-            <input
-              value={vehiclePlate}
-              onChange={e => setVehiclePlate(e.target.value.toUpperCase())}
-              placeholder="AA-123-CI"
-              className="flex-1 bg-transparent text-sm font-medium outline-none uppercase"
-              style={{ color: '#1C1C1C' }}
-            />
-          </FieldGroup>
+          <div className="space-y-1.5">
+            <Label>Plaque d'immatriculation</Label>
+            <Input value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value.toUpperCase())} placeholder="AA-123-CI" className="uppercase" />
+          </div>
 
         </div>
       </div>
 
       {/* ── CTA ── */}
-      <div
-        className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom"
-        style={{ background: 'rgba(255,255,255,0.97)', borderTop: '1px solid #F1F1F1' }}
-      >
-        <button
+      <div className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom bg-card/97 border-t border-border">
+        <Button
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full h-14 rounded-full font-bold text-white text-base tap disabled:opacity-60 flex items-center justify-center gap-2 gradient-flame"
-          style={{ boxShadow: '0 8px 24px rgba(255,97,0,.4)' }}
+          size="lg"
+          className="w-full rounded-full"
         >
           {loading ? (
-            <span className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+            <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
           ) : 'Enregistrer les modifications'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function FieldGroup({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold mb-1.5" style={{ color: '#717171' }}>{label}</p>
-      <div
-        className="flex items-center gap-3 px-4 h-14 rounded-2xl border"
-        style={{ background: '#FFFFFF', borderColor: '#E4E4E4' }}
-      >
-        {children}
+        </Button>
       </div>
     </div>
   );
