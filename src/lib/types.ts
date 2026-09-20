@@ -52,12 +52,28 @@ export type OrderStatus =
   | 'preparing' | 'ready' | 'delivering' | 'completed'
   | 'cancelled' | 'refunded';
 
+export interface DeliveryRestaurant {
+  name: string;
+  address: string;
+  logo_url?: string | null;
+  latitude?: number;
+  longitude?: number;
+  phone?: string | null;
+}
+
 export interface Delivery {
   id: number;
   status: DeliveryStatus;
   order_status?: OrderStatus;
   tracking_token?: string | null;
   order?: DeliveryOrder;
+  // Champs plats retournés par l'endpoint history
+  restaurant?: DeliveryRestaurant;
+  order_ref?: string;
+  earning?: { net_amount: number; gross_amount: number; status: string | null };
+  cancelled_at?: string | null;
+  cancellation_reason?: string | null;
+  cancelled_by?: string | null;
   distance_km?: number;
   estimated_minutes?: number;
   driver_earning_estimate?: number;

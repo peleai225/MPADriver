@@ -33,10 +33,16 @@ const fadeUp = {
 };
 
 function CompletedCard({ delivery }: { delivery: Delivery }) {
-  const order = delivery.order;
+  // L'endpoint history retourne les champs à plat (restaurant, order_ref, earning)
+  // L'endpoint active retourne order.restaurant, order.reference, driver_earning_estimate
+  const restaurant = delivery.restaurant ?? delivery.order?.restaurant;
+  const reference = delivery.order_ref ?? delivery.order?.reference;
+  const earning = delivery.earning?.net_amount ?? delivery.driver_earning_estimate;
+  const address = delivery.order?.delivery_address;
   const statusLabel = DELIVERY_STATUS_LABELS[delivery.status] ?? delivery.status;
   const isDone = delivery.status === 'delivered';
-  const restaurant = order?.restaurant;
+  const isCancelled = delivery.status === 'cancelled';
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
@@ -47,26 +53,32 @@ function CompletedCard({ delivery }: { delivery: Delivery }) {
               : <div className="w-full h-full flex items-center justify-center bg-muted"><Package size={18} className="text-muted-foreground" /></div>}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm truncate text-foreground">{restaurant?.name ?? 'Restaurant'}</p>
+            <p className="font-bold text-sm truncate text-foreground">{restaurant?.name ?? 'Restaurant inconnu'}</p>
             <div className="flex items-center gap-1 mt-0.5">
               <MapPin size={11} className="text-muted-foreground" />
-              <p className="text-xs truncate text-muted-foreground">{order?.delivery_address?.split(',')[0] ?? '—'}</p>
+              <p className="text-xs truncate text-muted-foreground">
+                {address ? address.split(',')[0] : (restaurant?.address ?? '—')}
+              </p>
             </div>
           </div>
           <div className="text-right shrink-0">
-            <Badge variant={isDone ? 'success' : 'destructive'}>{statusLabel}</Badge>
-            {delivery.driver_earning_estimate != null && (
+            <Badge variant={isDone ? 'success' : isCancelled ? 'destructive' : 'muted'}>{statusLabel}</Badge>
+            {isDone && earning != null && earning > 0 && (
               <p className="text-sm font-extrabold mt-1 tabular text-primary">
-                {formatFCFA(delivery.driver_earning_estimate)}
+                +{formatFCFA(earning)}
               </p>
             )}
           </div>
         </div>
         <div className="px-4 pb-3 flex items-center gap-4 border-t border-border/60">
-          <span className="text-xs text-muted-foreground tabular">#{order?.reference ?? '—'}</span>
-          <span className="text-xs text-muted-foreground">{order?.items?.length ?? 0} article{(order?.items?.length ?? 0) > 1 ? 's' : ''}</span>
+          <span className="text-xs text-muted-foreground tabular">
+            {reference ? `#${reference}` : '—'}
+          </span>
+          {isCancelled && delivery.cancellation_reason && (
+            <span className="text-xs text-destructive/70 truncate flex-1">{delivery.cancellation_reason}</span>
+          )}
           {delivery.distance_km != null && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 ml-auto">
               <MapPin size={10} className="text-muted-foreground" />
               <span className="text-xs text-muted-foreground tabular">{Number(delivery.distance_km).toFixed(1)} km</span>
             </div>
