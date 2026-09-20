@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Wallet, ChevronDown, Bell, Clock } from 'lucide-react';
+import { Wallet, ChevronDown, Clock } from 'lucide-react';
+import { PageHeader } from '../components/PageHeader';
 import { api } from '../lib/api';
 import { useToast } from '../lib/toast';
 import { useAuth } from '../lib/auth';
@@ -10,7 +11,6 @@ import { Separator } from '../components/ui/separator';
 import { Label } from '../components/ui/label';
 import { Input } from '../components/ui/input';
 
-const BG = '#F5F0EB';
 const ORANGE = '#FF6100';
 
 export function EarningsPage() {
@@ -74,21 +74,10 @@ export function EarningsPage() {
   };
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: BG }}>
+    <div className="min-h-screen pb-28 bg-paper">
 
       {/* ── HEADER ── */}
-      <div className="px-5 pt-safe pt-5 pb-2 flex items-start justify-between">
-        <div>
-          <h1 className="font-extrabold text-3xl leading-tight" style={{ color: '#1C1C1C' }}>Gains</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#A0A0A0' }}>Votre tableau de bord financier</p>
-        </div>
-        <div className="relative mt-1">
-          <div className="w-11 h-11 rounded-full flex items-center justify-center tap" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-            <Bell size={20} style={{ color: '#1C1C1C' }} />
-          </div>
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ background: ORANGE }} />
-        </div>
-      </div>
+      <PageHeader title="Gains" subtitle="Votre tableau de bord financier" />
 
       <div className="px-5 mt-3 space-y-3">
 

@@ -1,10 +1,10 @@
-import { LogOut, Truck, Star, Award, MapPin, User, Pencil, Bell, ChevronRight } from 'lucide-react';
+import { LogOut, Truck, Star, Award, MapPin, User, Pencil, ChevronRight } from 'lucide-react';
+import { PageHeader } from '../components/PageHeader';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import type { VerificationStatus } from '../lib/types';
 import { formatFCFA, resolvePhotoUrl } from '../lib/format';
 
-const BG = '#F5F0EB';
 const ORANGE = '#FF6100';
 
 const STATUS_MAP: Record<VerificationStatus, { label: string; color: string; bg: string }> = {
@@ -35,18 +35,10 @@ export function ProfilePage() {
   const ratingNum = driver.rating != null ? Number(driver.rating) : 5.0;
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: BG }}>
+    <div className="min-h-screen pb-28 bg-paper">
 
       {/* ── HEADER ── */}
-      <div className="px-5 pt-safe pt-5 pb-2 flex items-center justify-between">
-        <h1 className="font-extrabold text-3xl" style={{ color: '#1C1C1C' }}>Profil</h1>
-        <div className="relative">
-          <div className="w-11 h-11 rounded-full flex items-center justify-center tap" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-            <Bell size={20} style={{ color: '#1C1C1C' }} />
-          </div>
-          <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ background: ORANGE }} />
-        </div>
-      </div>
+      <PageHeader title="Profil" />
 
       <div className="px-5 mt-3 space-y-3">
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Bell, RefreshCw, MapPin, Clock, ChevronRight } from 'lucide-react';
+import { RefreshCw, MapPin, Clock, ChevronRight } from 'lucide-react';
 import { api } from '../lib/api';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
@@ -7,12 +7,12 @@ import { useAuth } from '../lib/auth';
 import { listenNewDelivery } from '../lib/echo';
 import { vibrate, playAlert } from '../lib/alert';
 import { DeliveryCard } from '../components/DeliveryCard';
+import { PageHeader } from '../components/PageHeader';
 import type { Delivery } from '../lib/types';
 import { formatFCFA, DELIVERY_STATUS_LABELS } from '../lib/format';
 
 type Tab = 'available' | 'active' | 'done';
 
-const BG = '#F5F0EB';
 const ORANGE = '#FF6100';
 
 function todayLabel() {
@@ -202,23 +202,14 @@ export function DeliveriesPage() {
   ];
 
   return (
-    <div className="min-h-screen pb-28" style={{ background: BG }}>
+    <div className="min-h-screen pb-28 bg-paper">
 
       {/* ── HEADER ── */}
-      <div className="px-5 pt-safe pt-5 pb-2 flex items-start justify-between">
-        <div>
-          <h1 className="font-extrabold text-3xl leading-tight" style={{ color: '#1C1C1C' }}>Courses</h1>
-          <p className="text-sm mt-1" style={{ color: '#A0A0A0' }}>📅 Aujourd'hui, {todayLabel()}</p>
-        </div>
-        <div className="relative mt-1">
-          <div className="w-11 h-11 rounded-full flex items-center justify-center tap" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-            <Bell size={20} style={{ color: '#1C1C1C' }} />
-          </div>
-          {pending.length > 0 && (
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ background: ORANGE }} />
-          )}
-        </div>
-      </div>
+      <PageHeader
+        title="Courses"
+        subtitle={`📅 Aujourd'hui, ${todayLabel()}`}
+        badgeCount={pending.length}
+      />
 
       {/* ── TABS ── */}
       <div className="px-5 mt-4">
