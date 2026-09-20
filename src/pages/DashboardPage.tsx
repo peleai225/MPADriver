@@ -11,6 +11,7 @@ import { api } from '../lib/api';
 import { formatFCFA, resolvePhotoUrl } from '../lib/format';
 import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, notify, playAlert, requestNotificationPermission } from '../lib/alert';
+import { requestPushToken, onForegroundMessage } from '../lib/firebase';
 import type { EarningsSummary, Delivery } from '../lib/types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -57,9 +58,18 @@ export function DashboardPage() {
     api.getActiveDelivery().then(setActiveDelivery).catch(() => {});
     loadPending(true);
     requestNotificationPermission();
+    requestPushToken().catch(() => {});
+    const unsubFcm = onForegroundMessage((payload: any) => {
+      const title = payload?.notification?.title || 'MENUPRO Livraison';
+      const body = payload?.notification?.body || '';
+      show(body || title, 'success');
+      vibrate([200, 100, 200]);
+      playAlert();
+      loadPending(true);
+    });
     const poll = setInterval(() => loadPending(true), 15000);
-    return () => clearInterval(poll);
-  }, [loadPending]);
+    return () => { clearInterval(poll); unsubFcm(); };
+  }, [loadPending, show]);
 
   useEffect(() => {
     if (!driver?.city || !driver?.is_available) return;
