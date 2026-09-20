@@ -7,12 +7,14 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:  'bg-brand-100 text-brand-700',
-        success:  'bg-success-50 text-success-700',
-        warning:  'bg-warning-50 text-warning-700',
-        danger:   'bg-danger-50 text-danger-700',
-        muted:    'bg-ink-100 text-ink-600',
-        dark:     'bg-brand-500/20 text-brand-400',
+        default:     'bg-primary/10 text-primary',
+        secondary:   'bg-secondary text-secondary-foreground',
+        destructive: 'bg-destructive/10 text-destructive',
+        outline:     'border border-border text-foreground',
+        success:     'bg-success-50 text-success-700',
+        warning:     'bg-warning-50 text-warning-700',
+        muted:       'bg-muted text-muted-foreground',
+        dark:        'bg-foreground/10 text-foreground',
       },
     },
     defaultVariants: { variant: 'default' },
@@ -33,12 +35,12 @@ function Badge({ className, variant, dot, pulse, children, ...props }: BadgeProp
         <span className={cn(
           'w-1.5 h-1.5 rounded-full',
           pulse && 'animate-pulse',
-          variant === 'success' && 'bg-success-500',
-          variant === 'warning' && 'bg-warning-500',
-          variant === 'danger'  && 'bg-danger-500',
-          variant === 'dark'    && 'bg-brand-400',
-          (!variant || variant === 'default') && 'bg-brand-500',
-          variant === 'muted'   && 'bg-ink-400',
+          variant === 'success'     && 'bg-success-500',
+          variant === 'warning'     && 'bg-warning-500',
+          variant === 'destructive' && 'bg-destructive',
+          variant === 'dark'        && 'bg-foreground/60',
+          (!variant || variant === 'default') && 'bg-primary',
+          variant === 'muted'       && 'bg-muted-foreground',
         )} />
       )}
       {children}

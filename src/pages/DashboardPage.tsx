@@ -8,6 +8,8 @@ import { formatFCFA, resolvePhotoUrl } from '../lib/format';
 import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, notify, playAlert, requestNotificationPermission } from '../lib/alert';
 import type { EarningsSummary, Delivery } from '../lib/types';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
 
 export function DashboardPage() {
   const { driver, refresh } = useAuth();
@@ -79,13 +81,11 @@ export function DashboardPage() {
   const ratingDisplay = ratingNum.toFixed(1);
 
   return (
-    <div className="min-h-screen pb-28 bg-paper">
+    <div className="min-h-screen pb-28 bg-background">
 
       {/* ── HEADER ── */}
       <div className="px-5 pt-safe pt-4 pb-2">
         <div className="flex items-center justify-between">
-
-          {/* Avatar + greeting */}
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full gradient-flame flex items-center justify-center shrink-0 overflow-hidden">
               {resolvePhotoUrl(driver?.photo_url) ? (
@@ -100,36 +100,30 @@ export function DashboardPage() {
                   }}
                 />
               ) : null}
-              <span
-                className="text-white font-extrabold text-xl"
-                style={{ display: resolvePhotoUrl(driver?.photo_url) ? 'none' : undefined }}
-              >
+              <span className="text-white font-extrabold text-xl"
+                style={{ display: resolvePhotoUrl(driver?.photo_url) ? 'none' : undefined }}>
                 {driver?.name?.[0]?.toUpperCase() ?? 'L'}
               </span>
             </div>
             <div>
-              <p className="text-sm text-ink-400">Bonjour 👋</p>
-              <p className="font-extrabold text-xl leading-tight text-ink-900">
+              <p className="text-sm text-muted-foreground">Bonjour 👋</p>
+              <p className="font-extrabold text-xl leading-tight text-foreground">
                 {driver?.name?.split(' ')[0] || 'Livreur'}
               </p>
             </div>
           </div>
 
-          {/* Bell */}
           <div className="relative">
-            <div className="w-11 h-11 rounded-full bg-white flex items-center justify-center tap"
-              style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
+            <div className="w-11 h-11 rounded-full bg-card flex items-center justify-center tap shadow-soft">
               <span className="text-xl">🔔</span>
             </div>
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-white bg-flame" />
+            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary" />
           </div>
         </div>
       </div>
 
       {/* ── STAT CARDS ── */}
       <div className="px-5 mt-4 grid grid-cols-2 gap-3">
-
-        {/* Gains aujourd'hui */}
         <div className="rounded-3xl p-4 overflow-hidden relative gradient-flame" style={{ minHeight: '140px' }}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 bg-white/25">
             <TrendingUp size={18} className="text-white" />
@@ -144,19 +138,13 @@ export function DashboardPage() {
           </svg>
         </div>
 
-        {/* Solde disponible */}
-        <div
-          className="rounded-3xl p-4 overflow-hidden relative"
-          style={{ background: 'linear-gradient(135deg, #3B2D8F, #2D1F6E)', minHeight: '140px' }}
-        >
+        <div className="rounded-3xl p-4 overflow-hidden relative" style={{ background: 'linear-gradient(135deg, #3B2D8F, #2D1F6E)', minHeight: '140px' }}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 bg-white/15">
             <Wallet size={18} className="text-white" />
           </div>
           <p className="text-white/70 text-xs mb-1">Solde disponible</p>
           <p className="text-white font-extrabold text-2xl leading-tight">{formatFCFA(earnings?.balance_available ?? 0)}</p>
-          <p className="text-white/50 text-[11px] mt-1">
-            {earnings?.deliveries_today ?? 0} courses aujourd'hui
-          </p>
+          <p className="text-white/50 text-[11px] mt-1">{earnings?.deliveries_today ?? 0} courses aujourd'hui</p>
           <div className="absolute bottom-3 right-3 opacity-20">
             <Wallet size={44} className="text-white" />
           </div>
@@ -171,34 +159,29 @@ export function DashboardPage() {
           disabled={togglingOnline || !!activeDelivery}
           className="w-full rounded-3xl p-4 flex items-center gap-3 tap disabled:opacity-60 overflow-hidden relative transition-all"
           style={{
-            background: isOnline ? 'linear-gradient(135deg, #FF6100, #FF8C00)' : '#FFFFFF',
+            background: isOnline ? 'linear-gradient(135deg, #FF6100, #FF8C00)' : 'hsl(var(--card))',
             boxShadow: isOnline ? '0 8px 24px rgba(255,97,0,.3)' : '0 2px 12px rgba(0,0,0,0.06)',
-            border: isOnline ? 'none' : '1px solid #EEEEEE',
+            border: isOnline ? 'none' : '1px solid hsl(var(--border))',
           }}
         >
           <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: isOnline ? 'rgba(255,255,255,0.25)' : '#F1F1F1' }}>
+            style={{ background: isOnline ? 'rgba(255,255,255,0.25)' : 'hsl(var(--muted))' }}>
             <span className="w-4 h-4 rounded-full" style={{
-              background: isOnline ? '#22C55E' : '#CBCBCB',
+              background: isOnline ? '#22C55E' : 'hsl(var(--muted-foreground))',
               boxShadow: isOnline ? '0 0 0 3px rgba(34,197,94,0.3)' : 'none',
             }} />
           </div>
-
           <div className="flex-1 text-left">
-            <p className="font-extrabold text-base" style={{ color: isOnline ? '#FFFFFF' : '#1C1C1C' }}>
+            <p className="font-extrabold text-base" style={{ color: isOnline ? '#FFFFFF' : 'hsl(var(--foreground))' }}>
               {togglingOnline ? 'Mise à jour...' : isOnline ? 'En ligne' : 'Hors ligne'}
             </p>
-            <p className="text-sm" style={{ color: isOnline ? 'rgba(255,255,255,0.75)' : '#A0A0A0' }}>
+            <p className="text-sm" style={{ color: isOnline ? 'rgba(255,255,255,0.75)' : 'hsl(var(--muted-foreground))' }}>
               {isOnline ? 'Vous recevez des courses' : 'Appuyez pour passer en ligne'}
             </p>
           </div>
-
-          {isOnline && (
-            <span className="text-4xl absolute right-16 top-1/2 -translate-y-1/2 opacity-90 select-none">🛵</span>
-          )}
-
+          {isOnline && <span className="text-4xl absolute right-16 top-1/2 -translate-y-1/2 opacity-90 select-none">🛵</span>}
           <div className="rounded-full relative shrink-0 transition-all"
-            style={{ background: isOnline ? 'rgba(255,255,255,0.35)' : '#E4E4E4', width: '52px', height: '28px' }}>
+            style={{ background: isOnline ? 'rgba(255,255,255,0.35)' : 'hsl(var(--muted))', width: '52px', height: '28px' }}>
             <div className="absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-all duration-300"
               style={{ left: isOnline ? '24px' : '2px' }} />
           </div>
@@ -206,110 +189,110 @@ export function DashboardPage() {
 
         {/* ── COURSE ACTIVE ── */}
         {activeDelivery && (
-          <button
+          <Button
+            variant="dark"
+            size="lg"
             onClick={() => go({ name: 'active-delivery' })}
-            className="w-full rounded-3xl p-4 flex items-center gap-3 tap bg-ink-900"
-            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}
+            className="w-full rounded-3xl justify-start gap-3"
           >
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-flame/20">
-              <Truck size={22} className="text-flame" />
+            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-primary/20">
+              <Truck size={22} className="text-primary" />
             </div>
             <div className="flex-1 text-left">
               <p className="text-white font-bold text-sm">Course en cours</p>
               <p className="text-white/50 text-xs truncate">{activeDelivery.order.restaurant.name} → client</p>
             </div>
             <ChevronRight size={18} className="text-white/40" />
-          </button>
+          </Button>
         )}
 
         {/* ── COURSES DISPONIBLES ── */}
         {!activeDelivery && (
-          <button
-            onClick={() => isOnline ? go({ name: 'deliveries' }) : undefined}
-            className="w-full rounded-3xl p-4 flex items-center gap-3 tap bg-white"
-            style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #EEEEEE' }}
-          >
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-flame/10 relative">
-              <Package size={21} className="text-flame" />
-              {pendingCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center bg-flame">
-                  {pendingCount > 9 ? '9+' : pendingCount}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 text-left">
-              <p className="font-bold text-base text-ink-900">Courses disponibles</p>
-              <p className="text-sm text-ink-400">
-                {pendingCount > 0
-                  ? `${pendingCount} course${pendingCount > 1 ? 's' : ''} en attente`
-                  : 'Aucune course pour le moment'}
-              </p>
-            </div>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-paper">
-              <ChevronRight size={16} className="text-ink-300" />
-            </div>
-          </button>
+          <Card>
+            <button
+              onClick={() => isOnline ? go({ name: 'deliveries' }) : undefined}
+              className="w-full px-4 py-3 flex items-center gap-3 tap"
+            >
+              <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-primary/10 relative">
+                <Package size={21} className="text-primary" />
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center bg-primary">
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-bold text-base text-foreground">Courses disponibles</p>
+                <p className="text-sm text-muted-foreground">
+                  {pendingCount > 0
+                    ? `${pendingCount} course${pendingCount > 1 ? 's' : ''} en attente`
+                    : 'Aucune course pour le moment'}
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted">
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </div>
+            </button>
+          </Card>
         )}
 
         {/* ── CETTE SEMAINE ── */}
-        <div className="rounded-3xl p-4 bg-white" style={{ boxShadow: '0 2px 12px rgba(0,0,0,0.06)', border: '1px solid #EEEEEE' }}>
-          <div className="flex items-center justify-between mb-4">
-            <p className="font-extrabold text-base text-ink-900">Cette semaine</p>
-            <div className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-paper text-ink-500">
-              7 jours <ChevronRight size={12} className="rotate-90" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-flame/10">
-                <Truck size={20} className="text-flame" />
+        <Card>
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between mb-4">
+              <p className="font-extrabold text-base text-foreground">Cette semaine</p>
+              <div className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+                7 jours <ChevronRight size={12} className="rotate-90" />
               </div>
-              <p className="font-extrabold text-xl text-ink-900">{earnings?.deliveries_today ?? 0}</p>
-              <p className="text-xs mt-0.5 text-ink-400">Courses</p>
-              <p className="text-xs font-bold mt-0.5 text-flame">Auj.</p>
             </div>
 
-            <div className="text-center border-x border-ink-100">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-flame/10">
-                <TrendingUp size={20} className="text-flame" />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-primary/10">
+                  <Truck size={20} className="text-primary" />
+                </div>
+                <p className="font-extrabold text-xl text-foreground">{earnings?.deliveries_today ?? 0}</p>
+                <p className="text-xs mt-0.5 text-muted-foreground">Courses</p>
+                <p className="text-xs font-bold mt-0.5 text-primary">Auj.</p>
               </div>
-              <p className="font-extrabold text-xl text-ink-900">{formatFCFA(earnings?.this_week ?? 0)}</p>
-              <p className="text-xs mt-0.5 text-ink-400">Gains</p>
-              <p className="text-xs font-bold mt-0.5 text-flame">Semaine</p>
-            </div>
 
-            <div className="text-center">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-flame/10">
-                <Star size={20} className="text-flame" />
+              <div className="text-center border-x border-border">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-primary/10">
+                  <TrendingUp size={20} className="text-primary" />
+                </div>
+                <p className="font-extrabold text-xl text-foreground">{formatFCFA(earnings?.this_week ?? 0)}</p>
+                <p className="text-xs mt-0.5 text-muted-foreground">Gains</p>
+                <p className="text-xs font-bold mt-0.5 text-primary">Semaine</p>
               </div>
-              <p className="font-extrabold text-xl text-ink-900">{ratingDisplay}</p>
-              <p className="text-xs mt-0.5 text-ink-400">Note moyenne</p>
-              <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                {[1,2,3,4,5].map(i => (
-                  <Star key={i} size={9} fill={i <= Math.round(ratingNum) ? '#FF6100' : 'none'} className="text-flame" />
-                ))}
+
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-primary/10">
+                  <Star size={20} className="text-primary" />
+                </div>
+                <p className="font-extrabold text-xl text-foreground">{ratingDisplay}</p>
+                <p className="text-xs mt-0.5 text-muted-foreground">Note</p>
+                <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                  {[1,2,3,4,5].map(i => (
+                    <Star key={i} size={9} fill={i <= Math.round(ratingNum) ? 'currentColor' : 'none'} className="text-primary" />
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* ── MOTIVATION BANNER ── */}
-        <div className="rounded-3xl p-4 flex items-center gap-3 bg-brand-50"
-          style={{ border: '1px solid rgba(255,97,0,0.15)' }}>
+        <div className="rounded-3xl p-4 flex items-center gap-3 bg-primary/5 border border-primary/15">
           <span className="text-3xl shrink-0">🏆</span>
           <div className="flex-1 min-w-0">
-            <p className="font-extrabold text-sm text-ink-900">Excellent travail !</p>
-            <p className="text-xs mt-0.5 text-ink-400">
+            <p className="font-extrabold text-sm text-foreground">Excellent travail !</p>
+            <p className="text-xs mt-0.5 text-muted-foreground">
               Continuez ainsi pour débloquer plus d'avantages.
             </p>
           </div>
-          <button
-            onClick={() => go({ name: 'earnings' })}
-            className="shrink-0 px-3 py-2 rounded-xl text-white text-xs font-bold tap gradient-flame"
-          >
+          <Button size="sm" onClick={() => go({ name: 'earnings' })} className="shrink-0">
             Voir mes stats
-          </button>
+          </Button>
         </div>
 
       </div>

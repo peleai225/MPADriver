@@ -8,6 +8,9 @@ import { listenNewDelivery } from '../lib/echo';
 import { vibrate, playAlert } from '../lib/alert';
 import { DeliveryCard } from '../components/DeliveryCard';
 import { PageHeader } from '../components/PageHeader';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Card } from '../components/ui/card';
 import type { Delivery } from '../lib/types';
 import { formatFCFA, DELIVERY_STATUS_LABELS } from '../lib/format';
 
@@ -24,49 +27,40 @@ function CompletedCard({ delivery }: { delivery: Delivery }) {
   const statusLabel = DELIVERY_STATUS_LABELS[delivery.status] ?? delivery.status;
   const isDone = delivery.status === 'delivered';
   return (
-    <div className="rounded-3xl overflow-hidden" style={{ background: '#FFFFFF', boxShadow: '0 2px 16px rgba(0,0,0,0.07)', border: '1px solid #F1F1F1' }}>
+    <Card className="overflow-hidden">
       <div className="px-4 py-3 flex items-center gap-3">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0" style={{ background: 'rgba(255,97,0,0.08)' }}>
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-primary/8 overflow-hidden">
           {order.restaurant.logo_url
-            ? <img src={order.restaurant.logo_url} alt="" className="w-full h-full object-cover rounded-2xl" />
+            ? <img src={order.restaurant.logo_url} alt="" className="w-full h-full object-cover" />
             : <span className="text-2xl">🏪</span>}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-sm truncate" style={{ color: '#1C1C1C' }}>{order.restaurant.name}</p>
+          <p className="font-bold text-sm truncate text-foreground">{order.restaurant.name}</p>
           <div className="flex items-center gap-1 mt-0.5">
-            <MapPin size={11} style={{ color: '#A0A0A0' }} />
-            <p className="text-xs truncate" style={{ color: '#A0A0A0' }}>{order.delivery_address.split(',')[0]}</p>
+            <MapPin size={11} className="text-muted-foreground" />
+            <p className="text-xs truncate text-muted-foreground">{order.delivery_address.split(',')[0]}</p>
           </div>
         </div>
         <div className="text-right shrink-0">
-          <span
-            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-            style={{ background: isDone ? '#F0FDF4' : '#FEF2F2', color: isDone ? '#16A34A' : '#DC2626' }}
-          >
-            {statusLabel}
-          </span>
+          <Badge variant={isDone ? 'success' : 'destructive'}>{statusLabel}</Badge>
           {delivery.driver_earning_estimate != null && (
-            <p className="text-sm font-extrabold mt-1" style={{ color: ORANGE }}>
+            <p className="text-sm font-extrabold mt-1 text-primary">
               {formatFCFA(delivery.driver_earning_estimate)}
             </p>
           )}
         </div>
       </div>
-      <div className="px-4 pb-3 flex items-center gap-4 border-t" style={{ borderColor: '#F5F5F5' }}>
-        <div className="flex items-center gap-1">
-          <span className="text-xs" style={{ color: '#A0A0A0' }}>#{order.reference}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <span className="text-xs" style={{ color: '#A0A0A0' }}>{order.items.length} article{order.items.length > 1 ? 's' : ''}</span>
-        </div>
+      <div className="px-4 pb-3 flex items-center gap-4 border-t border-border/60">
+        <span className="text-xs text-muted-foreground">#{order.reference}</span>
+        <span className="text-xs text-muted-foreground">{order.items.length} article{order.items.length > 1 ? 's' : ''}</span>
         {delivery.distance_km != null && (
           <div className="flex items-center gap-1">
-            <MapPin size={10} style={{ color: '#A0A0A0' }} />
-            <span className="text-xs" style={{ color: '#A0A0A0' }}>{Number(delivery.distance_km).toFixed(1)} km</span>
+            <MapPin size={10} className="text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">{Number(delivery.distance_km).toFixed(1)} km</span>
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -202,9 +196,8 @@ export function DeliveriesPage() {
   ];
 
   return (
-    <div className="min-h-screen pb-28 bg-paper">
+    <div className="min-h-screen pb-28 bg-background">
 
-      {/* ── HEADER ── */}
       <PageHeader
         title="Courses"
         subtitle={`📅 Aujourd'hui, ${todayLabel()}`}
@@ -213,7 +206,7 @@ export function DeliveriesPage() {
 
       {/* ── TABS ── */}
       <div className="px-5 mt-4">
-        <div className="flex rounded-2xl p-1 gap-1" style={{ background: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+        <div className="flex rounded-2xl p-1 gap-1 bg-card shadow-soft">
           {TABS.map(t => {
             const isActive = tab === t.key;
             return (
@@ -221,16 +214,16 @@ export function DeliveriesPage() {
                 key={t.key}
                 onClick={() => setTab(t.key)}
                 className="flex-1 flex flex-col items-center gap-1 py-2 rounded-xl tap transition-all"
-                style={{ background: isActive ? '#FFF4EE' : 'transparent' }}
+                style={{ background: isActive ? 'hsl(var(--primary) / 0.08)' : 'transparent' }}
               >
                 <span className="text-lg leading-none">{t.icon}</span>
-                <span className="text-[10px] font-bold leading-none" style={{ color: isActive ? ORANGE : '#A0A0A0' }}>
+                <span className={`text-[10px] font-bold leading-none ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
                   {t.label}
                 </span>
                 {t.count > 0 && (
-                  <span className="text-[9px] font-extrabold px-1.5 rounded-full" style={{ background: isActive ? ORANGE : '#E4E4E4', color: isActive ? '#FFF' : '#717171' }}>
+                  <Badge variant={isActive ? 'default' : 'muted'} className="text-[9px] px-1.5 py-0 h-4">
                     {t.count}
-                  </span>
+                  </Badge>
                 )}
               </button>
             );
@@ -244,12 +237,12 @@ export function DeliveriesPage() {
         {tab === 'available' && (
           <>
             {loading && pending.length === 0 ? (
-              [0, 1].map(i => <div key={i} className="h-52 rounded-3xl" style={{ background: '#E8E0D8', animation: 'pulse 1.5s infinite' }} />)
+              [0, 1].map(i => <div key={i} className="h-52 rounded-3xl skeleton" />)
             ) : pending.length > 0 ? (
               <>
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ background: ORANGE }} />
-                  <p className="font-extrabold text-base" style={{ color: '#1C1C1C' }}>
+                  <span className="w-2.5 h-2.5 rounded-full bg-primary" />
+                  <p className="font-extrabold text-base text-foreground">
                     {pending.length} course{pending.length > 1 ? 's' : ''} disponible{pending.length > 1 ? 's' : ''}
                   </p>
                 </div>
@@ -264,30 +257,27 @@ export function DeliveriesPage() {
                 ))}
               </>
             ) : (
-              <div className="rounded-3xl overflow-hidden" style={{ background: '#FFFFFF', boxShadow: '0 2px 16px rgba(0,0,0,0.07)' }}>
-                <div className="flex items-center justify-center pt-6 pb-4" style={{ background: 'linear-gradient(180deg, #FFF4EE 0%, #FFFFFF 100%)' }}>
+              <Card className="overflow-hidden">
+                <div className="flex items-center justify-center pt-6 pb-4 bg-gradient-to-b from-primary/5 to-card">
                   <span className="text-8xl select-none">🛵</span>
                 </div>
                 <div className="px-5 pb-5">
-                  <p className="font-extrabold text-base mb-1" style={{ color: '#1C1C1C' }}>Aucune course disponible</p>
-                  <p className="text-sm mb-4" style={{ color: '#A0A0A0' }}>Nous recherchons des courses près de vous.</p>
+                  <p className="font-extrabold text-base mb-1 text-foreground">Aucune course disponible</p>
+                  <p className="text-sm mb-4 text-muted-foreground">Nous recherchons des courses près de vous.</p>
                   <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-full flex-1 justify-center"
-                      style={{ background: driver?.is_available ? 'rgba(34,197,94,0.1)' : 'rgba(160,160,160,0.1)' }}>
-                      <span className="w-2 h-2 rounded-full" style={{ background: driver?.is_available ? '#22C55E' : '#A0A0A0' }} />
-                      <span className="text-xs font-semibold" style={{ color: driver?.is_available ? '#16A34A' : '#717171' }}>
+                    <div className={`flex items-center gap-1.5 px-3 py-2 rounded-full flex-1 justify-center ${driver?.is_available ? 'bg-success-50' : 'bg-muted'}`}>
+                      <span className={`w-2 h-2 rounded-full ${driver?.is_available ? 'bg-success-500' : 'bg-muted-foreground'}`} />
+                      <span className={`text-xs font-semibold ${driver?.is_available ? 'text-success-700' : 'text-muted-foreground'}`}>
                         {driver?.is_available ? 'Vous êtes en ligne' : 'Vous êtes hors ligne'}
                       </span>
                     </div>
-                    <button onClick={() => loadPending()} disabled={loading}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-full tap border"
-                      style={{ borderColor: ORANGE, color: ORANGE }}>
+                    <Button variant="outline" size="pill" onClick={() => loadPending()} disabled={loading}>
                       <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-                      <span className="text-xs font-semibold">Actualiser</span>
-                    </button>
+                      Actualiser
+                    </Button>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </>
         )}
@@ -298,20 +288,19 @@ export function DeliveriesPage() {
             {activeDelivery ? (
               <>
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ background: '#22C55E' }} />
-                  <p className="font-extrabold text-base" style={{ color: '#1C1C1C' }}>Votre course active</p>
+                  <span className="w-2.5 h-2.5 rounded-full animate-pulse bg-success-500" />
+                  <p className="font-extrabold text-base text-foreground">Votre course active</p>
                 </div>
                 <ActiveDeliveryBanner delivery={activeDelivery} onGo={() => go({ name: 'active-delivery' })} />
               </>
             ) : (
               <div className="text-center py-12">
                 <span className="text-6xl">✅</span>
-                <p className="font-extrabold text-base mt-4" style={{ color: '#1C1C1C' }}>Aucune course en cours</p>
-                <p className="text-sm mt-1" style={{ color: '#A0A0A0' }}>Acceptez une course pour commencer.</p>
-                <button onClick={() => setTab('available')} className="mt-4 px-5 py-2 rounded-full font-bold text-sm tap"
-                  style={{ background: ORANGE, color: '#FFF' }}>
+                <p className="font-extrabold text-base mt-4 text-foreground">Aucune course en cours</p>
+                <p className="text-sm mt-1 text-muted-foreground">Acceptez une course pour commencer.</p>
+                <Button size="pill" className="mt-4" onClick={() => setTab('available')}>
                   Voir les courses
-                </button>
+                </Button>
               </div>
             )}
           </>
@@ -321,12 +310,12 @@ export function DeliveriesPage() {
         {tab === 'done' && (
           <>
             {historyLoading ? (
-              [0,1,2].map(i => <div key={i} className="h-24 rounded-3xl" style={{ background: '#E8E0D8', animation: 'pulse 1.5s infinite' }} />)
+              [0,1,2].map(i => <div key={i} className="h-24 rounded-3xl skeleton" />)
             ) : history.length > 0 ? (
               <>
                 <div className="flex items-center justify-between">
-                  <p className="font-extrabold text-base" style={{ color: '#1C1C1C' }}>Historique</p>
-                  <button onClick={loadHistory} className="tap" style={{ color: ORANGE }}>
+                  <p className="font-extrabold text-base text-foreground">Historique</p>
+                  <button onClick={loadHistory} className="tap text-primary">
                     <RefreshCw size={15} className={historyLoading ? 'animate-spin' : ''} />
                   </button>
                 </div>
@@ -335,8 +324,8 @@ export function DeliveriesPage() {
             ) : (
               <div className="text-center py-12">
                 <span className="text-6xl">📋</span>
-                <p className="font-extrabold text-base mt-4" style={{ color: '#1C1C1C' }}>Aucune course terminée</p>
-                <p className="text-sm mt-1" style={{ color: '#A0A0A0' }}>Votre historique apparaîtra ici.</p>
+                <p className="font-extrabold text-base mt-4 text-foreground">Aucune course terminée</p>
+                <p className="text-sm mt-1 text-muted-foreground">Votre historique apparaîtra ici.</p>
               </div>
             )}
           </>

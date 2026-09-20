@@ -4,23 +4,24 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-sm font-bold transition-all duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[.96] active:opacity-90',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-sm font-bold transition-all duration-150 select-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[.96]',
   {
     variants: {
       variant: {
-        default:   'bg-brand-500 text-white shadow-pop hover:bg-brand-600',
-        secondary: 'bg-ink-100 text-ink-700 hover:bg-ink-200',
-        outline:   'border-2 border-ink-200 text-ink-700 bg-transparent hover:bg-ink-50',
-        ghost:     'text-ink-600 hover:bg-ink-100',
-        danger:    'bg-danger-50 text-danger-600 hover:bg-danger-100',
-        dark:      'bg-white/10 text-white hover:bg-white/20',
-        success:   'bg-success-500 text-white hover:bg-success-600',
+        default:     'bg-primary text-primary-foreground shadow-pop hover:bg-primary/90 active:bg-primary/80',
+        secondary:   'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        outline:     'border-2 border-border bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground',
+        ghost:       'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        dark:        'bg-foreground text-background hover:bg-foreground/90',
+        muted:       'bg-muted text-muted-foreground hover:bg-muted/80',
+        link:        'text-primary underline-offset-4 hover:underline p-0 h-auto',
       },
       size: {
         default: 'h-13 px-5',
-        sm:      'h-9 px-4 text-xs',
-        lg:      'h-14 px-7 text-base',
-        icon:    'h-10 w-10',
+        sm:      'h-9 px-4 text-xs rounded-xl',
+        lg:      'h-14 px-7 text-base rounded-3xl',
+        icon:    'h-10 w-10 rounded-full',
         pill:    'h-9 px-4 rounded-full text-xs',
       },
     },

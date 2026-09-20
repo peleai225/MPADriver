@@ -1,11 +1,11 @@
 import type { VerificationStatus } from '../lib/types';
 import { Badge } from './ui/badge';
 
-const MAP: Record<VerificationStatus, { label: string; variant: 'success' | 'warning' | 'danger' | 'muted' }> = {
-  approved:  { label: 'Approuvé',   variant: 'success' },
-  pending:   { label: 'En attente', variant: 'warning' },
-  rejected:  { label: 'Refusé',     variant: 'danger'  },
-  suspended: { label: 'Suspendu',   variant: 'muted'   },
+const MAP: Record<VerificationStatus, { label: string; variant: 'success' | 'warning' | 'destructive' | 'muted' }> = {
+  approved:  { label: 'Approuvé',   variant: 'success'     },
+  pending:   { label: 'En attente', variant: 'warning'     },
+  rejected:  { label: 'Refusé',     variant: 'destructive' },
+  suspended: { label: 'Suspendu',   variant: 'muted'       },
 };
 
 export function StatusBadge({ status }: { status: VerificationStatus }) {
