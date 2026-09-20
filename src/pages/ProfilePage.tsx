@@ -1,4 +1,7 @@
-import { LogOut, Truck, Star, Award, MapPin, User, Pencil, ChevronRight } from 'lucide-react';
+import {
+  LogOut, Truck, Star, Award, MapPin, Pencil, ChevronRight,
+  Wallet, Settings, HelpCircle, FileText, Bike, Car, WifiOff, Wifi,
+} from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -17,16 +20,22 @@ const STATUS_VARIANT: Record<VerificationStatus, 'success' | 'warning' | 'destru
 };
 
 const STATUS_LABELS: Record<VerificationStatus, string> = {
-  approved:  'Approuvé',
+  approved:  'Approuve',
   pending:   'En attente',
-  rejected:  'Refusé',
+  rejected:  'Refuse',
   suspended: 'Suspendu',
 };
 
-const VEHICLE_LABELS: Record<string, { label: string; emoji: string }> = {
-  moto:    { label: 'Moto',    emoji: '🏍️' },
-  velo:    { label: 'Vélo',    emoji: '🚲' },
-  voiture: { label: 'Voiture', emoji: '🚗' },
+const VEHICLE_ICONS: Record<string, React.ElementType> = {
+  moto: Bike,
+  velo: Bike,
+  voiture: Car,
+};
+
+const VEHICLE_LABELS: Record<string, string> = {
+  moto: 'Moto',
+  velo: 'Velo',
+  voiture: 'Voiture',
 };
 
 export function ProfilePage() {
@@ -37,11 +46,11 @@ export function ProfilePage() {
 
   if (!driver) return null;
 
-  const vehicleInfo = VEHICLE_LABELS[driver.vehicle_type];
   const level = driver.total_deliveries > 100 ? 'Expert' : driver.total_deliveries > 50 ? 'Pro' : 'Junior';
   const levelVariant = level === 'Expert' ? 'warning' : level === 'Pro' ? 'default' : 'muted';
   const ratingNum = driver.rating != null ? Number(driver.rating) : 5.0;
   const photoUrl = resolvePhotoUrl(driver.photo_url);
+  const VehicleIcon = VEHICLE_ICONS[driver.vehicle_type] ?? Car;
 
   return (
     <div className="min-h-screen pb-28 bg-background">
@@ -50,8 +59,8 @@ export function ProfilePage() {
 
       <div className="px-5 mt-3 space-y-3">
 
-        {/* ── CARTE PROFIL ── */}
-        <Card className="overflow-hidden border-0 gradient-brand shadow-pop">
+        {/* PROFILE CARD */}
+        <Card className="overflow-hidden border-0 gradient-hero shadow-pop">
           <CardContent className="p-5 relative">
             <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none bg-white/10" />
 
@@ -93,8 +102,8 @@ export function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* ── STATS ── */}
-        <Card>
+        {/* STATS */}
+        <Card className="shadow-xs">
           <CardContent className="pt-4">
             <div className="grid grid-cols-3 gap-2">
               <StatCell icon={<Truck size={18} className="text-primary" />} value={String(driver.total_deliveries)} label="Livraisons" />
@@ -115,45 +124,50 @@ export function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* ── SOLDE ── */}
-        <Card>
+        {/* BALANCE */}
+        <Card className="shadow-xs">
           <CardContent className="p-0">
-            <div className="px-4 py-3 flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-primary/10">
-                <span className="text-2xl">💰</span>
+            <button onClick={() => go({ name: 'earnings' })} className="w-full px-4 py-3 flex items-center gap-3 tap">
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
+                <Wallet size={20} className="text-primary" />
               </div>
-              <div className="flex-1">
-                <p className="text-xs font-semibold text-muted-foreground">Total cumulé</p>
-                <p className="font-extrabold text-xl text-foreground">{formatFCFA(driver.total_earnings_xof)}</p>
+              <div className="flex-1 text-left">
+                <p className="text-xs font-semibold text-muted-foreground">Total cumule</p>
+                <p className="font-extrabold text-xl tabular text-foreground">{formatFCFA(driver.total_earnings_xof)}</p>
               </div>
               <ChevronRight size={18} className="text-muted-foreground/50" />
-            </div>
+            </button>
           </CardContent>
         </Card>
 
-        {/* ── INFOS ── */}
-        <Card className="overflow-hidden">
+        {/* INFO */}
+        <Card className="overflow-hidden shadow-xs">
           <CardContent className="p-0">
             <div className="px-4 pt-4 pb-2">
-              <p className="font-extrabold text-sm text-foreground">Informations</p>
+              <p className="font-bold text-sm text-foreground">Informations</p>
             </div>
             <InfoRow icon={<MapPin size={15} className="text-primary" />} label="Ville" value={`${driver.city}${driver.zone ? ` — ${driver.zone}` : ''}`} />
-            <InfoRow icon={<span className="text-base">{vehicleInfo?.emoji ?? '🚗'}</span>} label="Véhicule" value={vehicleInfo?.label ?? driver.vehicle_type} />
-            {driver.vehicle_plate && <InfoRow icon={<span className="text-sm">🪪</span>} label="Plaque" value={driver.vehicle_plate} />}
-            <InfoRow icon={<User size={15} className="text-primary" />} label="Statut" value={driver.is_available ? '🟢 En ligne' : '⚪ Hors ligne'} last />
+            <InfoRow icon={<VehicleIcon size={15} className="text-primary" />} label="Vehicule" value={VEHICLE_LABELS[driver.vehicle_type] ?? driver.vehicle_type} />
+            {driver.vehicle_plate && <InfoRow icon={<FileText size={15} className="text-primary" />} label="Plaque" value={driver.vehicle_plate} />}
+            <InfoRow
+              icon={driver.is_available ? <Wifi size={15} className="text-success-600" /> : <WifiOff size={15} className="text-muted-foreground" />}
+              label="Statut"
+              value={driver.is_available ? 'En ligne' : 'Hors ligne'}
+              last
+            />
           </CardContent>
         </Card>
 
-        {/* ── MENU ── */}
-        <Card className="overflow-hidden">
+        {/* MENU */}
+        <Card className="overflow-hidden shadow-xs">
           <CardContent className="p-0">
-            <MenuRow icon="⚙️" label="Paramètres" onPress={() => push({ name: 'edit-profile' })} />
-            <MenuRow icon="❓" label="Aide & Support" onPress={() => window.open('tel:+2250501862640')} />
-            <MenuRow icon="📄" label="Conditions d'utilisation" onPress={() => window.open('https://menupro.ci/conditions')} last />
+            <MenuRow icon={Settings} label="Parametres" onPress={() => push({ name: 'edit-profile' })} />
+            <MenuRow icon={HelpCircle} label="Aide & Support" onPress={() => window.open('tel:+2250501862640')} />
+            <MenuRow icon={FileText} label="Conditions d'utilisation" onPress={() => window.open('https://menupro.ci/conditions')} last />
           </CardContent>
         </Card>
 
-        {/* ── DÉCONNEXION ── */}
+        {/* LOGOUT */}
         <Button
           variant="dark"
           size="lg"
@@ -161,7 +175,7 @@ export function ProfilePage() {
           className="w-full rounded-full"
         >
           <LogOut size={18} />
-          Se déconnecter
+          Se deconnecter
         </Button>
 
       </div>
@@ -174,10 +188,10 @@ function StatCell({ icon, value, label, sub }: {
 }) {
   return (
     <div className="text-center">
-      <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-primary/10">
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-2 bg-primary/10">
         {icon}
       </div>
-      <p className="font-extrabold text-xl text-foreground">{value}</p>
+      <p className="font-extrabold text-xl tabular text-foreground">{value}</p>
       <p className="text-xs mt-0.5 text-muted-foreground">{label}</p>
       {sub}
     </div>
@@ -199,14 +213,14 @@ function InfoRow({ icon, label, value, last }: { icon: React.ReactNode; label: s
   );
 }
 
-function MenuRow({ icon, label, onPress, last }: { icon: string; label: string; onPress: () => void; last?: boolean }) {
+function MenuRow({ icon: Icon, label, onPress, last }: { icon: React.ElementType; label: string; onPress: () => void; last?: boolean }) {
   return (
     <button
       onClick={onPress}
       className={`w-full flex items-center gap-3 px-4 py-3.5 tap ${!last ? 'border-b border-border/60' : ''}`}
     >
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-lg bg-muted">
-        {icon}
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-muted">
+        <Icon size={16} className="text-foreground" />
       </div>
       <p className="flex-1 text-sm font-semibold text-left text-foreground">{label}</p>
       <ChevronRight size={15} className="text-muted-foreground/50" />

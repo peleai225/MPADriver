@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Eye, EyeOff, Upload, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, EyeOff, Upload, CheckCircle2, Bike, Car } from 'lucide-react';
 import { api } from '../lib/api';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
@@ -10,11 +10,11 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
 
-const CITIES = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
+const CITIES = ['Abidjan', 'Bouake', 'Yamoussoukro', 'San-Pedro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
 const VEHICLES = [
-  { value: 'moto',    label: 'Moto',    emoji: '🏍️' },
-  { value: 'velo',    label: 'Vélo',    emoji: '🚲' },
-  { value: 'voiture', label: 'Voiture', emoji: '🚗' },
+  { value: 'moto',    label: 'Moto',    Icon: Bike },
+  { value: 'velo',    label: 'Velo',    Icon: Bike },
+  { value: 'voiture', label: 'Voiture', Icon: Car },
 ];
 
 export function RegisterPage() {
@@ -40,11 +40,11 @@ export function RegisterPage() {
   const nextStep = () => {
     if (step === 0) {
       if (!name || !phone || !password) { show('Remplissez tous les champs.', 'error'); return; }
-      if (password.length < 6) { show('Mot de passe : minimum 6 caractères.', 'error'); return; }
+      if (password.length < 6) { show('Mot de passe : minimum 6 caracteres.', 'error'); return; }
     }
     if (step === 1) {
-      if (!vehiclePlate) { show('Entrez la plaque du véhicule.', 'error'); return; }
-      if (!cniNumber) { show('Entrez votre numéro CNI.', 'error'); return; }
+      if (!vehiclePlate) { show('Entrez la plaque du vehicule.', 'error'); return; }
+      if (!cniNumber) { show('Entrez votre numero CNI.', 'error'); return; }
     }
     setStep(s => s + 1);
   };
@@ -86,15 +86,15 @@ export function RegisterPage() {
   };
 
   const STEP_TITLES = [
-    { pre: 'Créez votre', main: 'Compte !' },
-    { pre: 'Votre', main: 'Véhicule' },
+    { pre: 'Creez votre', main: 'Compte !' },
+    { pre: 'Votre', main: 'Vehicule' },
     { pre: 'Vos', main: 'Documents' },
   ];
 
   return (
     <div className="min-h-screen flex flex-col overflow-hidden bg-foreground">
 
-      {/* ── HERO ── */}
+      {/* HERO */}
       <div className="relative flex-none h-[42vh] flex flex-col justify-end px-6 pb-10 safe-top overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-4 right-2 w-28 h-28 rounded-full opacity-25 bg-primary" />
@@ -121,7 +121,7 @@ export function RegisterPage() {
         </div>
       </div>
 
-      {/* ── CARD BLANCHE ── */}
+      {/* WHITE CARD */}
       <div className="flex-1 rounded-t-[2.5rem] -mt-6 flex flex-col overflow-hidden bg-card shadow-card">
 
         {/* Stepper pills */}
@@ -138,19 +138,19 @@ export function RegisterPage() {
           ))}
         </div>
 
-        {/* Formulaire scrollable */}
+        {/* Form scrollable */}
         <div className="flex-1 overflow-y-auto px-6 pb-32">
           <div className="space-y-5 pt-2">
 
-            {/* Étape 1 — Infos */}
+            {/* Step 1 - Info */}
             {step === 0 && (
               <>
                 <div className="space-y-1.5">
                   <Label>Nom complet</Label>
-                  <Input value={name} onChange={e => setName(e.target.value)} placeholder="Kouamé Brou" />
+                  <Input value={name} onChange={e => setName(e.target.value)} placeholder="Kouame Brou" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Téléphone</Label>
+                  <Label>Telephone</Label>
                   <Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="0701234567" />
                 </div>
                 <div className="space-y-1.5">
@@ -159,7 +159,7 @@ export function RegisterPage() {
                     type={showPwd ? 'text' : 'password'}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="--------"
                     rightIcon={
                       <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setShowPwd(v => !v)}>
                         {showPwd ? <EyeOff size={17} className="text-muted-foreground" /> : <Eye size={17} className="text-muted-foreground" />}
@@ -184,7 +184,7 @@ export function RegisterPage() {
               </>
             )}
 
-            {/* Étape 2 — Véhicule */}
+            {/* Step 2 - Vehicle */}
             {step === 1 && (
               <>
                 <div className="grid grid-cols-3 gap-2 pt-1">
@@ -198,7 +198,12 @@ export function RegisterPage() {
                       onClick={() => setVehicleType(v.value)}
                     >
                       <CardContent className="flex flex-col items-center gap-2 py-4 px-2">
-                        <span className="text-3xl">{v.emoji}</span>
+                        <div className={cn(
+                          'w-12 h-12 rounded-xl flex items-center justify-center',
+                          vehicleType === v.value ? 'bg-primary/10' : 'bg-muted',
+                        )}>
+                          <v.Icon size={24} className={vehicleType === v.value ? 'text-primary' : 'text-muted-foreground'} />
+                        </div>
                         <span className={cn('text-xs font-bold', vehicleType === v.value ? 'text-primary' : 'text-muted-foreground')}>
                           {v.label}
                         </span>
@@ -211,29 +216,29 @@ export function RegisterPage() {
                   <Input value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value.toUpperCase())} placeholder="AA-123-CI" className="uppercase" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Numéro CNI</Label>
+                  <Label>Numero CNI</Label>
                   <Input value={cniNumber} onChange={e => setCniNumber(e.target.value)} placeholder="CI123456789" />
                 </div>
               </>
             )}
 
-            {/* Étape 3 — Documents */}
+            {/* Step 3 - Documents */}
             {step === 2 && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Photos claires requises. Vérification sous 24–48h par l'équipe MENUPRO Livraison.
+                  Photos claires requises. Verification sous 24-48h par l'equipe MENUPRO Livraison.
                 </p>
                 <FileUpload label="Votre photo de profil" file={profilePhoto} onChange={setProfilePhoto} optional />
                 <FileUpload label="CNI (recto/verso)" file={cniPhoto} onChange={setCniPhoto} />
                 <FileUpload label="Permis de conduire" file={licensePhoto} onChange={setLicensePhoto} />
-                <FileUpload label="Photo du véhicule" file={vehiclePhoto} onChange={setVehiclePhoto} />
+                <FileUpload label="Photo du vehicule" file={vehiclePhoto} onChange={setVehiclePhoto} />
               </>
             )}
           </div>
         </div>
       </div>
 
-      {/* ── CTA FIXE ── */}
+      {/* CTA */}
       <div className="fixed bottom-0 inset-x-0 px-6 py-4 safe-bottom bg-card border-t border-border">
         <Button
           onClick={step < 2 ? nextStep : handleSubmit}
@@ -252,7 +257,7 @@ export function RegisterPage() {
 
         {step === 0 && (
           <p className="text-center text-sm mt-3 text-muted-foreground">
-            Déjà livreur ?{' '}
+            Deja livreur ?{' '}
             <Button variant="link" className="p-0 h-auto font-bold" onClick={pop}>
               Se connecter
             </Button>
@@ -293,7 +298,7 @@ function FileUpload({ label, file, onChange, optional }: {
           {label}{optional && <span className="font-normal text-xs ml-1 text-muted-foreground">(optionnel)</span>}
         </p>
         <p className="text-xs mt-0.5 text-muted-foreground">
-          {file ? `✓ ${file.name}` : 'Appuyer pour prendre une photo'}
+          {file ? file.name : 'Appuyer pour prendre une photo'}
         </p>
       </div>
     </label>

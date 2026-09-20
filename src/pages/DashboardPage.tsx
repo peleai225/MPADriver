@@ -1,5 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { TrendingUp, Wallet, Package, Star, ChevronRight, Truck } from 'lucide-react';
+import { motion } from 'framer-motion';
+import {
+  TrendingUp, Wallet, Package, Star, ChevronRight, Truck,
+  Bell, Zap, ArrowUpRight, Clock, MapPin,
+} from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
@@ -12,7 +16,16 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
-import { Badge } from '../components/ui/badge';
+import { Progress } from '../components/ui/progress';
+
+const stagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+const fadeUp = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
+};
 
 export function DashboardPage() {
   const { driver, refresh } = useAuth();
@@ -49,16 +62,16 @@ export function DashboardPage() {
     listenNewDelivery(driver.city, () => {
       if (!active) return;
       loadPending(true); vibrate([200,100,200,100,200]); playAlert();
-      notify('🛵 Nouvelle course !', 'Une course est disponible dans votre zone.', () => go({ name: 'deliveries' }));
-      show('🛵 Nouvelle course disponible !', 'success');
+      notify('Nouvelle course !', 'Une course est disponible dans votre zone.', () => go({ name: 'deliveries' }));
+      show('Nouvelle course disponible !', 'success');
     }).then(u => { if (active) unsubs.push(u); });
     if (driver?.id) {
       listenDriverAssigned(driver.id, (data: any) => {
         if (!active) return;
         api.getActiveDelivery().then(d => setActiveDelivery(d)).catch(() => {});
         vibrate([300,100,300,100,500]); playAlert();
-        notify('✅ Course assignée !', `Commande ${data?.order_ref ?? ''} — allez chercher la commande.`, () => go({ name: 'active-delivery' }));
-        show('✅ Course assignée — démarrez !', 'success');
+        notify('Course assignée !', `Commande ${data?.order_ref ?? ''} — allez chercher la commande.`, () => go({ name: 'active-delivery' }));
+        show('Course assignée — démarrez !', 'success');
       }).then(u => { if (active) unsubs.push(u); });
     }
     unsubsRef.current = unsubs;
@@ -81,218 +94,282 @@ export function DashboardPage() {
 
   const isOnline = driver?.is_available ?? false;
   const ratingNum = driver?.rating != null ? Number(driver.rating) : 5.0;
-  const ratingDisplay = ratingNum.toFixed(1);
   const photoUrl = resolvePhotoUrl(driver?.photo_url);
+  const dailyGoal = 10;
+  const dailyDone = earnings?.deliveries_today ?? 0;
+  const dailyPct = Math.min(100, (dailyDone / dailyGoal) * 100);
 
   return (
     <div className="min-h-screen pb-28 bg-background">
 
       {/* ── HEADER ── */}
-      <div className="px-5 pt-safe pt-4 pb-2">
+      <div className="px-5 pt-safe pt-4 pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12 gradient-flame">
-              {photoUrl ? (
-                <AvatarImage src={photoUrl} />
-              ) : null}
-              <AvatarFallback className="bg-transparent text-white font-extrabold text-xl">
-                {driver?.name?.[0]?.toUpperCase() ?? 'L'}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-11 w-11 ring-2 ring-card shadow-soft">
+                {photoUrl ? <AvatarImage src={photoUrl} /> : null}
+                <AvatarFallback className="bg-primary text-primary-foreground font-bold text-base">
+                  {driver?.name?.[0]?.toUpperCase() ?? 'L'}
+                </AvatarFallback>
+              </Avatar>
+              <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card ${isOnline ? 'bg-success-500' : 'bg-muted-foreground'}`} />
+            </div>
             <div>
-              <p className="text-sm text-muted-foreground">Bonjour 👋</p>
-              <p className="font-extrabold text-xl leading-tight text-foreground">
+              <p className="text-xs font-medium text-muted-foreground">Bonjour</p>
+              <p className="font-bold text-base leading-tight text-foreground">
                 {driver?.name?.split(' ')[0] || 'Livreur'}
               </p>
             </div>
           </div>
 
-          <div className="relative">
-            <Button variant="outline" size="icon" className="rounded-full h-11 w-11 shadow-soft">
-              <span className="text-xl">🔔</span>
-            </Button>
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-background bg-primary" />
-          </div>
+          <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full bg-card shadow-xs">
+            <Bell size={18} strokeWidth={2} className="text-foreground" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
+          </Button>
         </div>
       </div>
 
-      {/* ── STAT CARDS ── */}
-      <div className="px-5 mt-4 grid grid-cols-2 gap-3">
-        <Card className="overflow-hidden border-0 gradient-brand" style={{ minHeight: '140px' }}>
-          <CardContent className="p-4 relative">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 bg-white/25">
-              <TrendingUp size={18} className="text-white" />
-            </div>
-            <p className="text-white/80 text-xs mb-1">Gains aujourd'hui</p>
-            <p className="text-white font-extrabold text-2xl leading-tight">{formatFCFA(earnings?.today ?? 0)}</p>
-            <p className="text-white/60 text-[11px] mt-1">
-              {earnings?.deliveries_today ?? 0} course{(earnings?.deliveries_today ?? 0) !== 1 ? 's' : ''}
-            </p>
-            <svg className="absolute bottom-0 left-0 right-0 w-full" height="40" viewBox="0 0 200 40" preserveAspectRatio="none">
-              <path d="M0,20 Q25,5 50,20 T100,20 T150,20 T200,20 L200,40 L0,40 Z" fill="rgba(255,255,255,0.1)" />
-            </svg>
-          </CardContent>
-        </Card>
-
-        <Card className="overflow-hidden border-0 bg-foreground" style={{ minHeight: '140px' }}>
-          <CardContent className="p-4 relative">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4 bg-white/15">
-              <Wallet size={18} className="text-white" />
-            </div>
-            <p className="text-white/70 text-xs mb-1">Solde disponible</p>
-            <p className="text-white font-extrabold text-2xl leading-tight">{formatFCFA(earnings?.balance_available ?? 0)}</p>
-            <p className="text-white/50 text-[11px] mt-1">{earnings?.deliveries_today ?? 0} courses aujourd'hui</p>
-            <div className="absolute bottom-3 right-3 opacity-20">
-              <Wallet size={44} className="text-white" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="px-5 mt-3 space-y-3">
+      <motion.div
+        variants={stagger}
+        initial="hidden"
+        animate="show"
+        className="px-5 space-y-3"
+      >
 
         {/* ── TOGGLE EN LIGNE ── */}
-        <Card className={isOnline ? 'border-0 gradient-brand shadow-pop' : ''}>
-          <CardContent className="p-4">
-            <button
-              onClick={toggleOnline}
-              disabled={togglingOnline || !!activeDelivery}
-              className="w-full flex items-center gap-3 tap disabled:opacity-60"
-            >
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isOnline ? 'bg-white/25' : 'bg-muted'}`}>
-                <span className={`w-4 h-4 rounded-full ${isOnline ? 'bg-success-500 shadow-[0_0_0_3px_rgba(34,197,94,0.3)]' : 'bg-muted-foreground'}`} />
-              </div>
-              <div className="flex-1 text-left">
-                <p className={`font-extrabold text-base ${isOnline ? 'text-white' : 'text-foreground'}`}>
-                  {togglingOnline ? 'Mise à jour...' : isOnline ? 'En ligne' : 'Hors ligne'}
-                </p>
-                <p className={`text-sm ${isOnline ? 'text-white/75' : 'text-muted-foreground'}`}>
-                  {isOnline ? 'Vous recevez des courses' : 'Appuyez pour passer en ligne'}
-                </p>
-              </div>
-              {isOnline && <span className="text-4xl opacity-90 select-none">🛵</span>}
-              <Switch
-                checked={isOnline}
-                disabled={togglingOnline || !!activeDelivery}
-                className={isOnline ? 'bg-white/35' : ''}
-              />
-            </button>
-          </CardContent>
-        </Card>
-
-        {/* ── COURSE ACTIVE ── */}
-        {activeDelivery && (
-          <Button
-            variant="dark"
-            size="lg"
-            onClick={() => go({ name: 'active-delivery' })}
-            className="w-full rounded-3xl justify-start gap-3"
+        <motion.div variants={fadeUp}>
+          <Card
+            className={`overflow-hidden transition-all duration-300 ${
+              isOnline
+                ? 'border-success-500/30 bg-success-50 shadow-soft'
+                : 'border-border'
+            }`}
           >
-            <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-primary/20">
-              <Truck size={22} className="text-primary" />
-            </div>
-            <div className="flex-1 text-left">
-              <p className="text-white font-bold text-sm">Course en cours</p>
-              <p className="text-white/50 text-xs truncate">{activeDelivery.order.restaurant.name} → client</p>
-            </div>
-            <ChevronRight size={18} className="text-white/40" />
-          </Button>
-        )}
-
-        {/* ── COURSES DISPONIBLES ── */}
-        {!activeDelivery && (
-          <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-4">
               <button
-                onClick={() => isOnline ? go({ name: 'deliveries' }) : undefined}
-                className="w-full px-4 py-3 flex items-center gap-3 tap"
+                onClick={toggleOnline}
+                disabled={togglingOnline || !!activeDelivery}
+                className="w-full flex items-center gap-3.5 tap disabled:opacity-60"
               >
-                <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-primary/10 relative">
-                  <Package size={21} className="text-primary" />
-                  {pendingCount > 0 && (
-                    <Badge className="absolute -top-1.5 -right-1.5 h-5 w-5 p-0 justify-center text-[9px]">
-                      {pendingCount > 9 ? '9+' : pendingCount}
-                    </Badge>
-                  )}
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                  isOnline ? 'bg-success-500' : 'bg-muted'
+                }`}>
+                  <Zap size={20} strokeWidth={2.5} className={isOnline ? 'text-white' : 'text-muted-foreground'} />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-bold text-base text-foreground">Courses disponibles</p>
-                  <p className="text-sm text-muted-foreground">
-                    {pendingCount > 0
-                      ? `${pendingCount} course${pendingCount > 1 ? 's' : ''} en attente`
-                      : 'Aucune course pour le moment'}
+                  <p className="font-bold text-sm text-foreground">
+                    {togglingOnline ? 'Mise à jour...' : isOnline ? 'Vous êtes en ligne' : 'Vous êtes hors ligne'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isOnline ? 'Vous recevez des courses' : 'Activez pour recevoir des courses'}
                   </p>
                 </div>
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-muted">
-                  <ChevronRight size={16} className="text-muted-foreground" />
-                </div>
+                <Switch
+                  checked={isOnline}
+                  disabled={togglingOnline || !!activeDelivery}
+                  className={isOnline ? 'bg-success-500' : ''}
+                />
               </button>
             </CardContent>
           </Card>
+        </motion.div>
+
+        {/* ── COURSE ACTIVE ── */}
+        {activeDelivery && (
+          <motion.div variants={fadeUp}>
+            <Card className="overflow-hidden border-0 gradient-dark shadow-elevated">
+              <CardContent className="p-0">
+                <button
+                  onClick={() => go({ name: 'active-delivery' })}
+                  className="w-full px-4 py-3.5 flex items-center gap-3 tap"
+                >
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-primary/15">
+                    <Truck size={20} className="text-primary" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-bold text-sm">Course en cours</p>
+                      <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
+                    </div>
+                    <p className="text-white/50 text-xs truncate mt-0.5">{activeDelivery.order.restaurant.name}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
+                    <ArrowUpRight size={16} className="text-white" />
+                  </div>
+                </button>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
 
-        {/* ── CETTE SEMAINE ── */}
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <p className="font-extrabold text-base text-foreground">Cette semaine</p>
-              <Badge variant="muted">
-                7 jours <ChevronRight size={12} className="rotate-90 ml-0.5" />
-              </Badge>
-            </div>
+        {/* ── EARNINGS HERO ── */}
+        <motion.div variants={fadeUp}>
+          <Card className="overflow-hidden border-0 gradient-hero shadow-pop">
+            <CardContent className="p-5 relative">
+              <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-white/5 -translate-y-1/3 translate-x-1/3" />
+              <div className="absolute bottom-0 left-0 w-20 h-20 rounded-full bg-white/5 translate-y-1/3 -translate-x-1/3" />
 
-            <div className="grid grid-cols-3 gap-2">
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-primary/10">
-                  <Truck size={20} className="text-primary" />
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/20">
+                      <TrendingUp size={16} className="text-white" />
+                    </div>
+                    <p className="text-white/80 text-xs font-medium">Gains aujourd'hui</p>
+                  </div>
+                  <button
+                    onClick={() => go({ name: 'earnings' })}
+                    className="flex items-center gap-1 text-white/60 text-xs font-medium tap hover:text-white/90"
+                  >
+                    Détails <ChevronRight size={12} />
+                  </button>
                 </div>
-                <p className="font-extrabold text-xl text-foreground">{earnings?.deliveries_today ?? 0}</p>
-                <p className="text-xs mt-0.5 text-muted-foreground">Courses</p>
-                <Badge variant="outline" className="mt-1 text-[10px] px-1.5 py-0 h-4 text-primary border-primary/30">Auj.</Badge>
+
+                <p className="text-white font-extrabold text-3xl tabular leading-none">
+                  {formatFCFA(earnings?.today ?? 0)}
+                </p>
+
+                <div className="flex items-center gap-4 mt-3">
+                  <div className="flex items-center gap-1.5">
+                    <Truck size={12} className="text-white/60" />
+                    <span className="text-white/70 text-xs tabular">
+                      {dailyDone} course{dailyDone !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock size={12} className="text-white/60" />
+                    <span className="text-white/70 text-xs">
+                      Semaine : {formatFCFA(earnings?.this_week ?? 0)}
+                    </span>
+                  </div>
+                </div>
               </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-              <div className="text-center border-x border-border">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-primary/10">
-                  <TrendingUp size={20} className="text-primary" />
-                </div>
-                <p className="font-extrabold text-xl text-foreground">{formatFCFA(earnings?.this_week ?? 0)}</p>
-                <p className="text-xs mt-0.5 text-muted-foreground">Gains</p>
-                <Badge variant="outline" className="mt-1 text-[10px] px-1.5 py-0 h-4 text-primary border-primary/30">Semaine</Badge>
+        {/* ── BALANCE + OBJECTIF ── */}
+        <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3">
+          <Card className="shadow-xs">
+            <CardContent className="p-3.5">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2.5 bg-muted">
+                <Wallet size={16} className="text-foreground" />
               </div>
-
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 bg-primary/10">
-                  <Star size={20} className="text-primary" />
-                </div>
-                <p className="font-extrabold text-xl text-foreground">{ratingDisplay}</p>
-                <p className="text-xs mt-0.5 text-muted-foreground">Note</p>
-                <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                  {[1,2,3,4,5].map(i => (
-                    <Star key={i} size={9} fill={i <= Math.round(ratingNum) ? 'currentColor' : 'none'} className="text-primary" />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* ── MOTIVATION BANNER ── */}
-        <Card className="border-primary/15 bg-primary/5">
-          <CardContent className="p-4 flex items-center gap-3">
-            <span className="text-3xl shrink-0">🏆</span>
-            <div className="flex-1 min-w-0">
-              <p className="font-extrabold text-sm text-foreground">Excellent travail !</p>
-              <p className="text-xs mt-0.5 text-muted-foreground">
-                Continuez ainsi pour débloquer plus d'avantages.
+              <p className="text-[11px] font-medium text-muted-foreground">Solde</p>
+              <p className="font-bold text-lg tabular leading-tight text-foreground mt-0.5">
+                {formatFCFA(earnings?.balance_available ?? 0)}
               </p>
-            </div>
-            <Button size="sm" onClick={() => go({ name: 'earnings' })} className="shrink-0">
-              Voir mes stats
-            </Button>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-      </div>
+          <Card className="shadow-xs">
+            <CardContent className="p-3.5">
+              <div className="flex items-center justify-between mb-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10">
+                  <Zap size={16} className="text-primary" />
+                </div>
+                <span className="text-xs font-bold tabular text-primary">{dailyDone}/{dailyGoal}</span>
+              </div>
+              <p className="text-[11px] font-medium text-muted-foreground">Objectif du jour</p>
+              <Progress value={dailyPct} className="mt-2 h-1.5" />
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ── COURSES DISPONIBLES ── */}
+        {!activeDelivery && (
+          <motion.div variants={fadeUp}>
+            <Card className="shadow-xs">
+              <CardContent className="p-0">
+                <button
+                  onClick={() => isOnline ? go({ name: 'deliveries' }) : undefined}
+                  className="w-full px-4 py-3.5 flex items-center gap-3 tap"
+                >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 relative">
+                    <Package size={18} className="text-primary" />
+                    {pendingCount > 0 && (
+                      <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-primary text-[9px] font-bold text-white flex items-center justify-center">
+                        {pendingCount > 9 ? '9+' : pendingCount}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-sm text-foreground">Courses disponibles</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {pendingCount > 0
+                        ? `${pendingCount} en attente près de vous`
+                        : 'Aucune course pour le moment'}
+                    </p>
+                  </div>
+                  <ChevronRight size={16} className="text-muted-foreground" />
+                </button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── PERFORMANCE ── */}
+        <motion.div variants={fadeUp}>
+          <Card className="shadow-xs">
+            <CardContent className="p-4">
+              <p className="font-bold text-sm text-foreground mb-3">Performance</p>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-1.5 bg-primary/10">
+                    <Truck size={16} className="text-primary" />
+                  </div>
+                  <p className="font-bold text-lg tabular text-foreground leading-tight">{dailyDone}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Courses</p>
+                </div>
+
+                <div className="text-center border-x border-border">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-1.5 bg-primary/10">
+                    <TrendingUp size={16} className="text-primary" />
+                  </div>
+                  <p className="font-bold text-lg tabular text-foreground leading-tight">
+                    {formatFCFA(earnings?.this_week ?? 0)}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Semaine</p>
+                </div>
+
+                <div className="text-center">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-1.5 bg-warning-50">
+                    <Star size={16} className="text-warning-500" />
+                  </div>
+                  <p className="font-bold text-lg tabular text-foreground leading-tight">{ratingNum.toFixed(1)}</p>
+                  <div className="flex items-center justify-center gap-px mt-0.5">
+                    {[1,2,3,4,5].map(i => (
+                      <Star key={i} size={8} fill={i <= Math.round(ratingNum) ? 'currentColor' : 'none'} className="text-warning-500" />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* ── QUICK ACTIONS ── */}
+        <motion.div variants={fadeUp}>
+          <Card className="shadow-xs border-primary/10 bg-primary/[0.03]">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
+                <MapPin size={18} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-foreground">Zone active</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {driver?.city ?? 'Non définie'}{driver?.zone ? ` · ${driver.zone}` : ''}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => go({ name: 'earnings' })} className="shrink-0 text-xs">
+                Mes stats
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+      </motion.div>
     </div>
   );
 }

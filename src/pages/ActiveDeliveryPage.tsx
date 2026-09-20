@@ -1,5 +1,9 @@
 import { useEffect, useState, useRef } from 'react';
-import { MapPin, Phone, Navigation, CheckCircle2, ArrowRight, ClipboardList } from 'lucide-react';
+import {
+  MapPin, Phone, Navigation, CheckCircle2, ArrowRight,
+  ClipboardList, Truck, Package, Home, FileText, Banknote, Smartphone,
+  AlertTriangle,
+} from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
@@ -16,8 +20,8 @@ import { Input } from '../components/ui/input';
 import { Separator } from '../components/ui/separator';
 
 const STEPS = ['assigned', 'heading_to_restaurant', 'picked_up', 'delivering'];
-const STEP_LABELS = ['Assigné', 'En route', 'Récupéré', 'En livraison'];
-const STEP_ICONS = ['📋', '🏍️', '📦', '🏠'];
+const STEP_LABELS = ['Assigne', 'En route', 'Recupere', 'En livraison'];
+const STEP_ICONS = [ClipboardList, Truck, Package, Home];
 
 export function ActiveDeliveryPage() {
   const { go } = useNav();
@@ -51,8 +55,8 @@ export function ActiveDeliveryPage() {
       if (!active) return;
       if (data?.new_status === 'cancelled') {
         vibrate([500, 200, 500]);
-        notify('⚠️ Course annulée', 'La commande a été annulée.', () => go({ name: 'deliveries' }));
-        show('Course annulée.', 'error');
+        notify('Course annulee', 'La commande a ete annulee.', () => go({ name: 'deliveries' }));
+        show('Course annulee.', 'error');
         setDelivery(null); stopTracking(); go({ name: 'deliveries' });
         return;
       }
@@ -89,7 +93,9 @@ export function ActiveDeliveryPage() {
 
   if (!delivery && !done) return (
     <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-background">
-      <span className="text-7xl mb-5">🛵</span>
+      <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-5 bg-muted">
+        <Truck size={36} className="text-muted-foreground" />
+      </div>
       <p className="font-extrabold text-xl text-foreground">Aucune course active</p>
       <p className="text-sm mt-2 text-muted-foreground">Acceptez une course pour commencer.</p>
       <Button onClick={() => go({ name: 'deliveries' })} size="lg" className="mt-6 rounded-full">
@@ -103,19 +109,22 @@ export function ActiveDeliveryPage() {
       {cashDebt && cashDebt.amount_owed > 0 && (
         <Card className="mb-6 w-full max-w-xs border-warning-200 bg-warning-50">
           <CardContent className="p-4 text-left">
-            <p className="font-bold text-sm text-warning-700">⚠️ Argent à reverser</p>
-            <p className="font-extrabold text-xl mt-1 text-warning-600">{formatFCFA(cashDebt.amount_owed)}</p>
-            <p className="text-xs mt-0.5 text-warning-700">à {cashDebt.restaurant}</p>
+            <div className="flex items-center gap-2 mb-1">
+              <AlertTriangle size={16} className="text-warning-600" />
+              <p className="font-bold text-sm text-warning-700">Argent a reverser</p>
+            </div>
+            <p className="font-extrabold text-xl mt-1 tabular text-warning-600">{formatFCFA(cashDebt.amount_owed)}</p>
+            <p className="text-xs mt-0.5 text-warning-700">a {cashDebt.restaurant}</p>
           </CardContent>
         </Card>
       )}
       <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6 animate-scale-in bg-success-50 border border-success-200">
         <CheckCircle2 size={44} className="text-success-500" />
       </div>
-      <h1 className="text-white font-extrabold text-3xl mb-2">Livraison effectuée !</h1>
-      <p className="text-white/50 text-sm mb-10">Votre gain a été ajouté à votre solde.</p>
+      <h1 className="text-white font-extrabold text-3xl mb-2">Livraison effectuee !</h1>
+      <p className="text-white/50 text-sm mb-10">Votre gain a ete ajoute a votre solde.</p>
       <Button onClick={() => go({ name: 'dashboard' })} size="lg" className="rounded-full">
-        Retour à l'accueil
+        Retour a l'accueil
       </Button>
     </div>
   );
@@ -128,26 +137,26 @@ export function ActiveDeliveryPage() {
   const stepIdx = STEPS.indexOf(delivery!.status);
 
   const actionLabel =
-    delivery!.status === 'assigned' ? "Je pars au restaurant →"
-    : delivery!.status === 'heading_to_restaurant' ? "Arrivé au restaurant →"
-    : delivery!.status === 'picked_up' ? "En route vers le client →"
-    : "Livraison effectuée ✓";
+    delivery!.status === 'assigned' ? 'Je pars au restaurant'
+    : delivery!.status === 'heading_to_restaurant' ? 'Arrive au restaurant'
+    : delivery!.status === 'picked_up' ? 'En route vers le client'
+    : 'Livraison effectuee';
 
   return (
     <div className="min-h-screen flex flex-col pb-28 bg-background">
 
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <div className="px-5 pt-safe pt-5 pb-4 bg-foreground">
         <div className="flex items-start justify-between mb-4">
           <div>
             <p className="text-white/40 text-xs">Course en cours</p>
-            <h1 className="text-white font-extrabold text-xl">{order.reference}</h1>
+            <h1 className="text-white font-extrabold text-xl tabular">{order.reference}</h1>
           </div>
           {delivery!.driver_earning_estimate != null && (
             <Card className="border-0 bg-primary/20">
               <CardContent className="px-3 py-2 text-right">
-                <p className="text-[10px] text-primary">Gain estimé</p>
-                <p className="font-extrabold text-lg text-primary">{formatFCFA(delivery!.driver_earning_estimate)}</p>
+                <p className="text-[10px] text-primary">Gain estime</p>
+                <p className="font-extrabold text-lg tabular text-primary">{formatFCFA(delivery!.driver_earning_estimate)}</p>
               </CardContent>
             </Card>
           )}
@@ -157,29 +166,35 @@ export function ActiveDeliveryPage() {
           {DELIVERY_STATUS_LABELS[delivery!.status] ?? delivery!.status}
         </Badge>
 
-        {/* Steps visuels */}
+        {/* Stepper */}
         <div className="flex items-center gap-2">
-          {STEPS.map((s, i) => (
-            <div key={s} className="flex items-center flex-1">
-              <div className="flex flex-col items-center flex-1">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all ${
-                  i < stepIdx ? 'bg-success-500' : i === stepIdx ? 'bg-primary' : 'bg-white/10'
-                }`}>
-                  {i < stepIdx ? '✓' : STEP_ICONS[i]}
+          {STEPS.map((s, i) => {
+            const Icon = STEP_ICONS[i];
+            return (
+              <div key={s} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                    i < stepIdx ? 'bg-success-500' : i === stepIdx ? 'bg-primary' : 'bg-white/10'
+                  }`}>
+                    {i < stepIdx
+                      ? <CheckCircle2 size={14} className="text-white" />
+                      : <Icon size={14} className={i === stepIdx ? 'text-white' : 'text-white/40'} />
+                    }
+                  </div>
+                  <p className={`text-[9px] mt-1 font-medium ${i <= stepIdx ? 'text-white' : 'text-white/30'}`}>
+                    {STEP_LABELS[i]}
+                  </p>
                 </div>
-                <p className={`text-[9px] mt-1 font-medium ${i <= stepIdx ? 'text-white' : 'text-white/30'}`}>
-                  {STEP_LABELS[i]}
-                </p>
+                {i < STEPS.length - 1 && (
+                  <div className={`h-0.5 flex-1 mb-5 ${i < stepIdx ? 'bg-success-500' : 'bg-white/15'}`} />
+                )}
               </div>
-              {i < STEPS.length - 1 && (
-                <div className={`h-0.5 flex-1 mb-5 ${i < stepIdx ? 'bg-success-500' : 'bg-white/15'}`} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* ── CARTE ── */}
+      {/* MAP */}
       <div className="h-48 relative">
         <DeliveryMap
           restaurantLat={order.restaurant.latitude}
@@ -199,14 +214,14 @@ export function ActiveDeliveryPage() {
 
       <div className="px-5 mt-4 space-y-3">
 
-        {/* ── ADRESSE CIBLE ── */}
+        {/* TARGET ADDRESS */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 ${isPickingUp ? 'bg-primary/10' : 'bg-success-50'}`}>
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${isPickingUp ? 'bg-primary/10' : 'bg-success-50'}`}>
                 <MapPin size={16} className={isPickingUp ? 'text-primary' : 'text-success-600'} />
               </div>
-              <p className="text-sm font-bold text-muted-foreground">{isPickingUp ? 'Récupérer chez' : 'Livrer à'}</p>
+              <p className="text-sm font-bold text-muted-foreground">{isPickingUp ? 'Recuperer chez' : 'Livrer a'}</p>
             </div>
             {isPickingUp && <p className="font-extrabold text-base mb-0.5 text-foreground">{order.restaurant.name}</p>}
             <p className="text-sm text-muted-foreground">{targetLabel}</p>
@@ -228,12 +243,12 @@ export function ActiveDeliveryPage() {
           </CardContent>
         </Card>
 
-        {/* ── COMMANDE ── */}
+        {/* ORDER DETAILS */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <ClipboardList size={16} className="text-primary" />
-              <p className="font-bold text-sm text-foreground">Commande <span className="text-primary">#{order.reference}</span></p>
+              <p className="font-bold text-sm text-foreground">Commande <span className="text-primary tabular">#{order.reference}</span></p>
             </div>
             <div className="space-y-1.5 mb-3">
               {order.items.slice(0, 3).map((item, i) => (
@@ -246,10 +261,16 @@ export function ActiveDeliveryPage() {
             </div>
             <Separator className="mb-3" />
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">
-                {order.payment_method === 'cash_on_delivery' ? '💵 Paiement à la livraison' : '📱 Payé en ligne'}
-              </span>
-              <span className="font-extrabold text-lg text-foreground">{formatFCFA(order.total)}</span>
+              <div className="flex items-center gap-1.5">
+                {order.payment_method === 'cash_on_delivery'
+                  ? <Banknote size={14} className="text-muted-foreground" />
+                  : <Smartphone size={14} className="text-muted-foreground" />
+                }
+                <span className="text-xs text-muted-foreground">
+                  {order.payment_method === 'cash_on_delivery' ? 'Paiement a la livraison' : 'Paye en ligne'}
+                </span>
+              </div>
+              <span className="font-extrabold text-lg tabular text-foreground">{formatFCFA(order.total)}</span>
             </div>
           </CardContent>
         </Card>
@@ -257,14 +278,14 @@ export function ActiveDeliveryPage() {
         {order.delivery_instructions && (
           <Card className="border-warning-200 bg-warning-50">
             <CardContent className="p-3.5 flex gap-2">
-              <span className="text-lg shrink-0">📝</span>
+              <FileText size={16} className="text-warning-600 shrink-0 mt-0.5" />
               <p className="text-sm text-warning-700">{order.delivery_instructions}</p>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* ── CTA ── */}
+      {/* CTA */}
       <div className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom bg-card/97 border-t border-border">
         <Button
           onClick={advance}
@@ -272,17 +293,20 @@ export function ActiveDeliveryPage() {
           size="lg"
           className="w-full rounded-full"
         >
-          {updating ? <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" /> : <>{actionLabel} <ArrowRight size={18} /></>}
+          {updating
+            ? <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+            : <>{actionLabel} <ArrowRight size={18} /></>
+          }
         </Button>
       </div>
 
-      {/* ── CASH MODAL ── */}
+      {/* CASH MODAL */}
       {showCashModal && (
         <div className="fixed inset-0 bg-black/60 flex items-end z-50">
           <Card className="w-full rounded-t-3xl rounded-b-none border-0 safe-bottom">
             <CardContent className="p-6 space-y-4">
               <h2 className="font-extrabold text-xl text-foreground">Collecte cash</h2>
-              <p className="text-sm text-muted-foreground">Entrez le montant total reçu du client.</p>
+              <p className="text-sm text-muted-foreground">Entrez le montant total recu du client.</p>
               <Input
                 type="number"
                 value={cashAmount}
@@ -293,21 +317,22 @@ export function ActiveDeliveryPage() {
               />
               {cashDebt && cashDebt.amount_owed > 0 && (
                 <Card className="border-warning-200 bg-warning-50">
-                  <CardContent className="p-3">
-                    <p className="text-sm font-bold text-warning-700">Tu dois reverser {formatFCFA(cashDebt.amount_owed)} à {cashDebt.restaurant}</p>
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-warning-600 shrink-0" />
+                    <p className="text-sm font-bold text-warning-700">Tu dois reverser {formatFCFA(cashDebt.amount_owed)} a {cashDebt.restaurant}</p>
                   </CardContent>
                 </Card>
               )}
               <Button
                 onClick={async () => {
                   const amount = parseInt(cashAmount);
-                  if (!amount) { show('Entrez le montant collecté.', 'error'); return; }
+                  if (!amount) { show('Entrez le montant collecte.', 'error'); return; }
                   setUpdating(true);
                   try {
                     const result = await api.confirmCashCollected(delivery!.id, amount);
                     setCashDebt({ amount_owed: result.amount_owed, restaurant: result.restaurant });
                     setShowCashModal(false); setDone(true);
-                    show(result.amount_owed > 0 ? `Reverse ${formatFCFA(result.amount_owed)} à ${result.restaurant}` : 'Livraison terminée !', result.amount_owed > 0 ? 'info' : 'success');
+                    show(result.amount_owed > 0 ? `Reverse ${formatFCFA(result.amount_owed)} a ${result.restaurant}` : 'Livraison terminee !', result.amount_owed > 0 ? 'info' : 'success');
                   } catch (e: any) {
                     show(e.message || 'Erreur', 'error');
                   } finally { setUpdating(false); }
@@ -316,7 +341,7 @@ export function ActiveDeliveryPage() {
                 size="lg"
                 className="w-full rounded-full"
               >
-                {updating ? '...' : "Confirmer la collecte"}
+                {updating ? <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" /> : 'Confirmer la collecte'}
               </Button>
             </CardContent>
           </Card>

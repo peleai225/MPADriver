@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, Camera, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Camera, CheckCircle2, Bike, Car } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
@@ -13,11 +13,11 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent } from '../components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 
-const CITIES = ['Abidjan', 'Bouaké', 'Yamoussoukro', 'San-Pédro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
+const CITIES = ['Abidjan', 'Bouake', 'Yamoussoukro', 'San-Pedro', 'Korhogo', 'Man', 'Daloa', 'Gagnoa'];
 const VEHICLES = [
-  { value: 'moto',    label: 'Moto',    emoji: '🏍️' },
-  { value: 'velo',    label: 'Vélo',    emoji: '🚲' },
-  { value: 'voiture', label: 'Voiture', emoji: '🚗' },
+  { value: 'moto',    label: 'Moto',    Icon: Bike },
+  { value: 'velo',    label: 'Velo',    Icon: Bike },
+  { value: 'voiture', label: 'Voiture', Icon: Car },
 ];
 
 export function EditProfilePage() {
@@ -51,7 +51,7 @@ export function EditProfilePage() {
       const res = await api.updateProfile(form);
       if (res) setDriver(res);
       await refresh();
-      show('Profil mis à jour !', 'success');
+      show('Profil mis a jour !', 'success');
       pop();
     } catch (err: any) {
       show(err.message || 'Erreur.', 'error');
@@ -65,7 +65,7 @@ export function EditProfilePage() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
 
-      {/* ── HEADER ── */}
+      {/* HEADER */}
       <div className="flex items-center gap-3 px-5 pb-4 safe-top pt-4 bg-foreground">
         <Button
           variant="ghost"
@@ -77,11 +77,11 @@ export function EditProfilePage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-white font-extrabold text-lg">Modifier le profil</h1>
-          <p className="text-white/40 text-xs">Mettez vos informations à jour</p>
+          <p className="text-white/40 text-xs">Mettez vos informations a jour</p>
         </div>
       </div>
 
-      {/* ── CONTENU ── */}
+      {/* CONTENT */}
       <div className="flex-1 overflow-y-auto px-5 pb-32">
 
         {/* AVATAR */}
@@ -106,7 +106,7 @@ export function EditProfilePage() {
 
           {photo ? (
             <div className="flex items-center gap-1.5 mt-3 text-xs font-semibold text-success-600">
-              <CheckCircle2 size={13} /> Nouvelle photo sélectionnée
+              <CheckCircle2 size={13} /> Nouvelle photo selectionnee
             </div>
           ) : (
             <p className="mt-3 text-xs text-muted-foreground">Appuyez pour changer la photo</p>
@@ -117,7 +117,7 @@ export function EditProfilePage() {
 
           <div className="space-y-1.5">
             <Label>Nom complet *</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Kouamé Brou" />
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Kouame Brou" />
           </div>
 
           <div className="space-y-1.5">
@@ -137,7 +137,7 @@ export function EditProfilePage() {
           </div>
 
           <div>
-            <Label className="mb-2">Type de véhicule *</Label>
+            <Label className="mb-2">Type de vehicule *</Label>
             <div className="grid grid-cols-3 gap-2">
               {VEHICLES.map(v => (
                 <Card
@@ -149,7 +149,12 @@ export function EditProfilePage() {
                   onClick={() => setVehicleType(v.value as 'moto' | 'velo' | 'voiture')}
                 >
                   <CardContent className="flex flex-col items-center gap-1.5 py-4 px-2">
-                    <span className="text-3xl">{v.emoji}</span>
+                    <div className={cn(
+                      'w-12 h-12 rounded-xl flex items-center justify-center',
+                      vehicleType === v.value ? 'bg-primary/10' : 'bg-muted',
+                    )}>
+                      <v.Icon size={24} className={vehicleType === v.value ? 'text-primary' : 'text-muted-foreground'} />
+                    </div>
                     <span className={cn('text-xs font-bold', vehicleType === v.value ? 'text-primary' : 'text-muted-foreground')}>
                       {v.label}
                     </span>
@@ -167,7 +172,7 @@ export function EditProfilePage() {
         </div>
       </div>
 
-      {/* ── CTA ── */}
+      {/* CTA */}
       <div className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom bg-card/97 border-t border-border">
         <Button
           onClick={handleSubmit}

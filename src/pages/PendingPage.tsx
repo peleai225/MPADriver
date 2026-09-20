@@ -1,4 +1,4 @@
-import { Bell, LogOut } from 'lucide-react';
+import { Bell, LogOut, FileCheck, Search, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { Button } from '../components/ui/button';
@@ -14,9 +14,9 @@ export function PendingPage() {
   };
 
   const steps = [
-    { done: true,  active: false, label: 'Dossier soumis',       icon: '📋' },
-    { done: false, active: true,  label: 'Vérification en cours', icon: '🔍' },
-    { done: false, active: false, label: 'Compte activé',         icon: '✅' },
+    { done: true,  active: false, label: 'Dossier soumis',       Icon: FileCheck },
+    { done: false, active: true,  label: 'Verification en cours', Icon: Search },
+    { done: false, active: false, label: 'Compte active',         Icon: CheckCircle2 },
   ];
 
   return (
@@ -36,16 +36,16 @@ export function PendingPage() {
 
         <div className="relative text-center">
           <p className="text-white/50 text-sm mb-1">Bienvenue chez</p>
-          <h1 className="text-white font-extrabold text-3xl leading-tight">Dossier en<br/>vérification</h1>
+          <h1 className="text-white font-extrabold text-3xl leading-tight">Dossier en<br/>verification</h1>
         </div>
       </div>
 
       {/* Card blanche */}
       <div className="flex-1 rounded-t-[2.5rem] px-6 pt-8 pb-10 flex flex-col bg-card shadow-card">
         <p className="text-sm mb-6 text-center text-muted-foreground">
-          Votre dossier a bien été reçu. L'équipe MENUPRO Livraison le vérifie sous{' '}
-          <strong className="text-foreground">24 à 48h</strong>.
-          Vous serez notifié dès la validation.
+          Votre dossier a bien ete recu. L'equipe MENUPRO Livraison le verifie sous{' '}
+          <strong className="text-foreground">24 a 48h</strong>.
+          Vous serez notifie des la validation.
         </p>
 
         {/* Steps */}
@@ -53,12 +53,15 @@ export function PendingPage() {
           {steps.map((s, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className="flex flex-col items-center">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 border-2 ${
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2 ${
                   s.done ? 'bg-success-50 border-success-500'
                   : s.active ? 'bg-primary/10 border-primary'
                   : 'bg-muted border-border'
                 }`}>
-                  {s.done ? '✅' : s.icon}
+                  {s.done
+                    ? <CheckCircle2 size={18} className="text-success-600" />
+                    : <s.Icon size={18} className={s.active ? 'text-primary' : 'text-muted-foreground'} />
+                  }
                 </div>
                 {i < steps.length - 1 && (
                   <div className={`w-0.5 h-4 mt-1 ${s.done ? 'bg-success-500' : 'bg-border'}`} />
@@ -71,7 +74,7 @@ export function PendingPage() {
                   {s.label}
                 </p>
                 {s.active && (
-                  <p className="text-xs text-muted-foreground">En cours de traitement…</p>
+                  <p className="text-xs text-muted-foreground">En cours de traitement...</p>
                 )}
               </div>
               {s.active && (
@@ -92,7 +95,7 @@ export function PendingPage() {
           </Button>
           <Button variant="outline" size="lg" onClick={handleLogout} className="w-full rounded-full">
             <LogOut size={18} />
-            Se déconnecter
+            Se deconnecter
           </Button>
         </div>
       </div>

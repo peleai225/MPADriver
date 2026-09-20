@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Clock, ChevronRight, ClipboardList } from 'lucide-react';
+import { MapPin, Clock, ChevronRight, ClipboardList, Package } from 'lucide-react';
 import type { Delivery } from '../lib/types';
 import { formatFCFA } from '../lib/format';
 import { Button } from './ui/button';
@@ -45,7 +45,7 @@ export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) 
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-primary/8 overflow-hidden">
           {order.restaurant.logo_url
             ? <img src={order.restaurant.logo_url} alt="" className="w-full h-full object-cover" />
-            : <span className="text-3xl">🏪</span>}
+            : <Package size={20} className="text-muted-foreground" />}
         </div>
 
         {/* Infos */}

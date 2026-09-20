@@ -1,8 +1,8 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 @theme {
-  /* Colors */
+  /* ── Brand palette ── */
   --color-brand-50:  #FFF7ED;
   --color-brand-100: #FFEDD5;
   --color-brand-200: #FED7AA;
@@ -14,22 +14,8 @@
   --color-brand-800: #9A3412;
   --color-brand-900: #7C2D12;
 
-  --color-flame: #FF6100;
-  --color-flame-dark: #FF3301;
   --color-paper: #F8F6F5;
   --color-charcoal: #1C1C1C;
-
-  --color-ink-50:  #F8F8F8;
-  --color-ink-100: #F1F1F1;
-  --color-ink-200: #E4E4E4;
-  --color-ink-300: #CBCBCB;
-  --color-ink-400: #A0A0A0;
-  --color-ink-500: #717171;
-  --color-ink-600: #4E4E4E;
-  --color-ink-700: #3D3D3D;
-  --color-ink-800: #2D2D2D;
-  --color-ink-900: #1A1A1A;
-  --color-ink-950: #0D0D0D;
 
   --color-success-50:  #F0FDF4;
   --color-success-100: #DCFCE7;
@@ -38,6 +24,7 @@
   --color-success-700: #15803D;
 
   --color-warning-50:  #FFFBEB;
+  --color-warning-100: #FEF3C7;
   --color-warning-200: #FDE68A;
   --color-warning-500: #F59E0B;
   --color-warning-600: #D97706;
@@ -54,7 +41,7 @@
   --color-info-600: #2563EB;
   --color-info-700: #1D4ED8;
 
-  /* ── shadcn semantic tokens (lient les variables CSS HSL aux classes Tailwind) ── */
+  /* ── shadcn semantic tokens ── */
   --color-background:              hsl(var(--background));
   --color-foreground:              hsl(var(--foreground));
   --color-card:                    hsl(var(--card));
@@ -81,12 +68,14 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   /* Font */
-  --font-sans: 'Montserrat', system-ui, sans-serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
 
-  /* Shadows */
-  --shadow-soft: 0 1px 2px rgba(0,0,0,.04), 0 6px 16px rgba(0,0,0,.06);
-  --shadow-card: 0 2px 4px rgba(0,0,0,.05), 0 12px 32px rgba(0,0,0,.08);
-  --shadow-pop:  0 8px 32px rgba(249,115,22,.35);
+  /* Shadows — layered for depth */
+  --shadow-xs:   0 1px 2px rgba(0,0,0,.05);
+  --shadow-soft: 0 1px 3px rgba(0,0,0,.06), 0 4px 12px rgba(0,0,0,.04);
+  --shadow-card: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.06);
+  --shadow-elevated: 0 4px 12px rgba(0,0,0,.1), 0 16px 40px rgba(0,0,0,.08);
+  --shadow-pop:  0 8px 32px rgba(249,115,22,.3);
 
   /* Radius */
   --radius-2xl: 1rem;
@@ -109,33 +98,33 @@
   @keyframes slide-up   { 0% { transform:translateY(100%); } 100% { transform:translateY(0); } }
   @keyframes slide-down { 0% { transform:translateY(0); } 100% { transform:translateY(100%); } }
   @keyframes shimmer    { 0% { background-position:-400px 0; } 100% { background-position:400px 0; } }
+  @keyframes pulse-ring { 0% { transform:scale(1); opacity:.5; } 100% { transform:scale(1.8); opacity:0; } }
 }
 
-/* Height utility h-13 */
 @utility h-13 { height: 3.25rem; }
 
-/* ── shadcn CSS variables (HSL) ─────────────────────── */
+/* ── shadcn CSS variables (HSL) ── */
 :root {
-  --background:            0 0% 97%;
-  --foreground:            0 0% 11%;
+  --background:            30 20% 97%;
+  --foreground:            20 10% 10%;
   --card:                  0 0% 100%;
-  --card-foreground:       0 0% 11%;
+  --card-foreground:       20 10% 10%;
   --popover:               0 0% 100%;
-  --popover-foreground:    0 0% 11%;
+  --popover-foreground:    20 10% 10%;
   --primary:               24.6 95% 53.1%;
   --primary-foreground:    0 0% 100%;
-  --secondary:             27 20% 95%;
-  --secondary-foreground:  0 0% 11%;
-  --muted:                 27 15% 93%;
-  --muted-foreground:      0 0% 44%;
-  --accent:                27 25% 92%;
-  --accent-foreground:     0 0% 11%;
+  --secondary:             30 15% 95%;
+  --secondary-foreground:  20 10% 10%;
+  --muted:                 30 10% 93%;
+  --muted-foreground:      20 5% 46%;
+  --accent:                30 20% 92%;
+  --accent-foreground:     20 10% 10%;
   --destructive:           0 84% 60%;
   --destructive-foreground:0 0% 100%;
-  --border:                27 15% 89%;
-  --input:                 27 15% 89%;
+  --border:                30 12% 90%;
+  --input:                 30 12% 90%;
   --ring:                  24.6 95% 53.1%;
-  --radius:                1rem;
+  --radius:                0.875rem;
 
   color-scheme: light;
   --safe-top:    env(safe-area-inset-top,    0px);
@@ -155,41 +144,48 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Safe area helpers */
+/* ── Utilities ── */
 .safe-top    { padding-top:    var(--safe-top); }
 .safe-bottom { padding-bottom: var(--safe-bottom); }
 .pt-safe     { padding-top:    calc(var(--safe-top) + 1rem); }
 .pb-safe     { padding-bottom: calc(var(--safe-bottom) + 1rem); }
 
-/* Scrollbar */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Skeleton shimmer */
+.tabular { font-variant-numeric: tabular-nums; }
+
 .skeleton {
-  background: linear-gradient(90deg, #EBEBEB 25%, #F5F5F5 50%, #EBEBEB 75%);
+  background: linear-gradient(90deg, hsl(var(--muted)) 25%, hsl(var(--accent)) 50%, hsl(var(--muted)) 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s linear infinite;
 }
 
-/* Tap feedback */
-.tap { cursor: pointer; transition: transform .12s ease, opacity .12s ease; user-select: none; }
-.tap:active { transform: scale(.96); opacity: .9; }
+.tap { cursor: pointer; transition: transform .15s cubic-bezier(.2,.8,.2,1), opacity .15s ease; user-select: none; }
+.tap:active { transform: scale(.97); opacity: .85; }
 
-/* Glass */
 .glass {
   background: rgba(255,255,255,.82);
   backdrop-filter: saturate(180%) blur(16px);
   -webkit-backdrop-filter: saturate(180%) blur(16px);
 }
 
-/* Named animation helpers */
 .sheet-enter { animation: scale-in .28s ease-out both; }
 .slide-in    { animation: slide-up .35s cubic-bezier(.32,.72,0,1) both; }
 .slide-down  { animation: slide-down .25s cubic-bezier(.32,.72,0,1) both; }
 .fade-out    { animation: fade-out .2s ease-in both; }
 
-/* Text gradient */
+/* ── Gradients ── */
+.gradient-brand {
+  background: linear-gradient(145deg, #F97316, #EA580C);
+}
+.gradient-dark {
+  background: linear-gradient(145deg, #1C1C1C, #2D2D2D);
+}
+.gradient-hero {
+  background: linear-gradient(160deg, #F97316 0%, #C2410C 100%);
+}
+
 .text-gradient {
   background: linear-gradient(135deg, #F97316, #C2410C);
   -webkit-background-clip: text;
@@ -197,18 +193,17 @@ body {
   background-clip: text;
 }
 
-/* Brand gradient utilities */
-.gradient-brand {
-  background: linear-gradient(135deg, #EA580C, #F97316);
+/* ── Pulse ring for live indicators ── */
+.pulse-ring {
+  position: relative;
 }
-.gradient-flame {
-  background: linear-gradient(135deg, #EA580C, #F97316);
-}
-.text-flame {
-  background: linear-gradient(135deg, #EA580C, #F97316);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.pulse-ring::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  border: 2px solid currentColor;
+  animation: pulse-ring 1.5s ease-out infinite;
 }
 
 /* Leaflet */
