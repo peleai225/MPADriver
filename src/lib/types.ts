@@ -47,9 +47,16 @@ export type IssueTypeRestaurant = 'restaurant_closed' | 'order_not_ready' | 'ite
 export type IssueTypeClient = 'client_absent' | 'address_not_found' | 'order_refused' | 'order_damaged' | 'accident';
 export type IssueType = IssueTypeRestaurant | IssueTypeClient;
 
+export type OrderStatus =
+  | 'draft' | 'pending_payment' | 'paid' | 'confirmed'
+  | 'preparing' | 'ready' | 'delivering' | 'completed'
+  | 'cancelled' | 'refunded';
+
 export interface Delivery {
   id: number;
   status: DeliveryStatus;
+  order_status?: OrderStatus;
+  tracking_token?: string | null;
   order?: DeliveryOrder;
   distance_km?: number;
   estimated_minutes?: number;

@@ -14,9 +14,9 @@ export function PendingPage() {
   };
 
   const steps = [
-    { done: true,  active: false, label: 'Dossier soumis',       Icon: FileCheck },
-    { done: false, active: true,  label: 'Verification en cours', Icon: Search },
-    { done: false, active: false, label: 'Compte active',         Icon: CheckCircle2 },
+    { done: true,  active: false, label: 'Dossier envoyé',       Icon: FileCheck },
+    { done: false, active: true,  label: 'Vérification en cours', Icon: Search },
+    { done: false, active: false, label: 'Compte activé',         Icon: CheckCircle2 },
   ];
 
   return (
@@ -36,16 +36,16 @@ export function PendingPage() {
 
         <div className="relative text-center">
           <p className="text-white/50 text-sm mb-1">Bienvenue chez</p>
-          <h1 className="text-white font-extrabold text-3xl leading-tight">Dossier en<br/>verification</h1>
+          <h1 className="text-white font-extrabold text-3xl leading-tight">Dossier en<br/>vérification</h1>
         </div>
       </div>
 
       {/* Card blanche */}
       <div className="flex-1 rounded-t-[2.5rem] px-6 pt-8 pb-10 flex flex-col bg-card shadow-card">
         <p className="text-sm mb-6 text-center text-muted-foreground">
-          Votre dossier a bien ete recu. L'equipe MENUPRO Livraison le verifie sous{' '}
+          Votre dossier a bien été reçu. L'equipe MENUPRO Livraison le vérifie sous{' '}
           <strong className="text-foreground">24 a 48h</strong>.
-          Vous serez notifie des la validation.
+          Vous serez notifié dès la validation.
         </p>
 
         {/* Steps */}
@@ -95,7 +95,7 @@ export function PendingPage() {
           </Button>
           <Button variant="outline" size="lg" onClick={handleLogout} className="w-full rounded-full">
             <LogOut size={18} />
-            Se deconnecter
+            Se déconnecter
           </Button>
         </div>
       </div>

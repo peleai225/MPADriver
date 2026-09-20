@@ -40,18 +40,18 @@ export function RegisterPage() {
   const nextStep = () => {
     if (step === 0) {
       if (!name || !phone || !password) { show('Remplissez tous les champs.', 'error'); return; }
-      if (password.length < 6) { show('Mot de passe : minimum 6 caracteres.', 'error'); return; }
+      if (password.length < 6) { show('Mot de passe : minimum 6 caractères.', 'error'); return; }
     }
     if (step === 1) {
-      if (!vehiclePlate) { show('Entrez la plaque du vehicule.', 'error'); return; }
-      if (!cniNumber) { show('Entrez votre numero CNI.', 'error'); return; }
+      if (!vehiclePlate) { show('Entrez la plaque du véhicule.', 'error'); return; }
+      if (!cniNumber) { show('Entrez votre numéro CNI.', 'error'); return; }
     }
     setStep(s => s + 1);
   };
 
   const handleSubmit = async () => {
     if (!cniPhoto || !licensePhoto || !vehiclePhoto) {
-      show('Uploadez les 3 photos requises.', 'error'); return;
+      show('Téléversez les 3 photos requises.', 'error'); return;
     }
     setLoading(true);
     try {
@@ -79,15 +79,15 @@ export function RegisterPage() {
       await api.register(form);
       go({ name: 'pending' });
     } catch (err: any) {
-      show(err.message || "Erreur lors de l'inscription.", 'error');
+      show(err.message || 'Erreur lors de l\'inscription.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   const STEP_TITLES = [
-    { pre: 'Creez votre', main: 'Compte !' },
-    { pre: 'Votre', main: 'Vehicule' },
+    { pre: 'Créez votre', main: 'Compte !' },
+    { pre: 'Votre', main: 'Véhicule' },
     { pre: 'Vos', main: 'Documents' },
   ];
 
@@ -95,12 +95,11 @@ export function RegisterPage() {
     <div className="min-h-screen flex flex-col overflow-hidden bg-foreground">
 
       {/* HERO */}
-      <div className="relative flex-none h-[42vh] flex flex-col justify-end px-6 pb-10 safe-top overflow-hidden">
+      <div className="relative flex-none min-h-[28vh] max-h-[38vh] flex flex-col justify-end px-6 pb-8 safe-top overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-4 right-2 w-28 h-28 rounded-full opacity-25 bg-primary" />
-          <div className="absolute top-16 right-20 w-14 h-14 rounded-full opacity-15 bg-primary" />
-          <div className="absolute top-8 left-1/2 w-8 h-8 rounded-full opacity-20 bg-primary" />
-          <div className="absolute bottom-8 right-6 w-18 h-18 rounded-full opacity-10 bg-primary" />
+          <div className="absolute top-4 right-2 w-24 h-24 rounded-full opacity-25 bg-primary" />
+          <div className="absolute top-14 right-18 w-12 h-12 rounded-full opacity-15 bg-primary" />
+          <div className="absolute top-6 left-1/2 w-8 h-8 rounded-full opacity-20 bg-primary" />
         </div>
 
         <Button
@@ -140,7 +139,7 @@ export function RegisterPage() {
 
         {/* Form scrollable */}
         <div className="flex-1 overflow-y-auto px-6 pb-32">
-          <div className="space-y-5 pt-2">
+          <div className="space-y-5 pt-2 max-w-md mx-auto">
 
             {/* Step 1 - Info */}
             {step === 0 && (
@@ -226,12 +225,12 @@ export function RegisterPage() {
             {step === 2 && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Photos claires requises. Verification sous 24-48h par l'equipe MENUPRO Livraison.
+                  Photos claires requises. Vérification sous 24-48h par l'équipe MENUPRO Livraison.
                 </p>
                 <FileUpload label="Votre photo de profil" file={profilePhoto} onChange={setProfilePhoto} optional />
                 <FileUpload label="CNI (recto/verso)" file={cniPhoto} onChange={setCniPhoto} />
                 <FileUpload label="Permis de conduire" file={licensePhoto} onChange={setLicensePhoto} />
-                <FileUpload label="Photo du vehicule" file={vehiclePhoto} onChange={setVehiclePhoto} />
+                <FileUpload label="Photo du véhicule" file={vehiclePhoto} onChange={setVehiclePhoto} />
               </>
             )}
           </div>

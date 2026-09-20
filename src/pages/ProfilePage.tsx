@@ -23,9 +23,9 @@ const STATUS_VARIANT: Record<VerificationStatus, 'success' | 'warning' | 'destru
 };
 
 const STATUS_LABELS: Record<VerificationStatus, string> = {
-  approved:  'Approuve',
+  approved:  'Approuvé',
   pending:   'En attente',
-  rejected:  'Refuse',
+  rejected:  'Refusé',
   suspended: 'Suspendu',
 };
 
@@ -37,7 +37,7 @@ const VEHICLE_ICONS: Record<string, React.ElementType> = {
 
 const VEHICLE_LABELS: Record<string, string> = {
   moto: 'Moto',
-  velo: 'Velo',
+  velo: 'Vélo',
   voiture: 'Voiture',
 };
 
@@ -173,7 +173,7 @@ export function ProfilePage() {
                   <Wallet size={20} className="text-primary" />
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-xs font-semibold text-muted-foreground">Total cumule</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Total cumulé</p>
                   <p className="font-extrabold text-xl tabular text-foreground">{formatFCFA(driver.total_earnings_xof)}</p>
                 </div>
                 <ChevronRight size={18} className="text-muted-foreground/50" />
@@ -190,9 +190,9 @@ export function ProfilePage() {
                 <p className="font-bold text-sm text-foreground">Documents</p>
               </div>
               <div className="px-4 pb-3 space-y-2">
-                <DocRow icon={docIcon} color={docColor} bg={docBg} label="CNI / Piece d'identite" status={isApproved ? 'Verifie' : 'En verification'} />
-                <DocRow icon={docIcon} color={docColor} bg={docBg} label="Permis de conduire" status={isApproved ? 'Verifie' : 'En verification'} />
-                <DocRow icon={docIcon} color={docColor} bg={docBg} label="Photo du vehicule" status={isApproved ? 'Verifie' : 'En verification'} />
+                <DocRow icon={docIcon} color={docColor} bg={docBg} label="CNI / Pièce d'identité" status={isApproved ? 'Vérifié' : 'En vérification'} />
+                <DocRow icon={docIcon} color={docColor} bg={docBg} label="Permis de conduire" status={isApproved ? 'Vérifié' : 'En vérification'} />
+                <DocRow icon={docIcon} color={docColor} bg={docBg} label="Photo du véhicule" status={isApproved ? 'Vérifié' : 'En vérification'} />
               </div>
             </CardContent>
           </Card>
@@ -224,10 +224,10 @@ export function ProfilePage() {
             <CardContent className="p-0">
               <MenuRow icon={pushEnabled ? Bell : BellOff} label="Notifications push" onPress={togglePush} trailing={
                 <span className={`text-xs font-medium ${pushEnabled ? 'text-success-600' : 'text-muted-foreground'}`}>
-                  {pushEnabled ? 'Active' : 'Desactive'}
+                  {pushEnabled ? 'Activé' : 'Désactivé'}
                 </span>
               } />
-              <MenuRow icon={MessageCircle} label="Signaler un probleme" onPress={() => window.open('https://wa.me/2250501862640?text=Bonjour%2C%20j%27ai%20un%20probl%C3%A8me%20avec%20l%27app%20MENUPRO%20Livraison')} />
+              <MenuRow icon={MessageCircle} label="Signaler un problème" onPress={() => window.open('tel:+2250501862640')} />
               <MenuRow icon={Shield} label="Conditions d'utilisation" onPress={() => window.open('https://menupro.ci/conditions')} />
               <MenuRow icon={HelpCircle} label="Aide & Support" onPress={() => window.open('tel:+2250501862640')} last />
             </CardContent>
@@ -243,7 +243,7 @@ export function ProfilePage() {
             className="w-full rounded-full"
           >
             <LogOut size={18} />
-            Se deconnecter
+            Se déconnecter
           </Button>
         </motion.div>
 

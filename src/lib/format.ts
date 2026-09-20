@@ -42,3 +42,23 @@ export const DELIVERY_STATUS_LABELS: Record<string, string> = {
   delivered:             'Livrée',
   cancelled:             'Annulée',
 };
+
+export const ORDER_STATUS_LABELS: Record<string, string> = {
+  draft:            'Brouillon',
+  pending_payment:  'Attente paiement',
+  paid:             'Payée',
+  confirmed:        'Confirmée',
+  preparing:        'En préparation',
+  ready:            'Prête',
+  delivering:       'En livraison',
+  completed:        'Terminée',
+  cancelled:        'Annulée',
+  refunded:         'Remboursée',
+};
+
+export const ORDER_STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  confirmed:  { bg: 'bg-info-50',    text: 'text-info-600' },
+  preparing:  { bg: 'bg-warning-50', text: 'text-warning-600' },
+  ready:      { bg: 'bg-success-50', text: 'text-success-600' },
+  cancelled:  { bg: 'bg-destructive/10', text: 'text-destructive' },
+};

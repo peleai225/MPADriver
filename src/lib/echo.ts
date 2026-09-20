@@ -119,3 +119,11 @@ export async function listenDeliveryStatus(driverId: number, cb: (data: any) => 
   ch.listen('.delivery.status_changed', cb);
   return () => ch.stopListening('.delivery.status_changed', cb);
 }
+
+export async function listenOrderStatus(trackingToken: string, cb: (data: any) => void): Promise<() => void> {
+  const echo = await getEcho();
+  if (!echo) return () => {};
+  const ch = echo.channel(`order.${trackingToken}`);
+  ch.listen('.order.status_changed', cb);
+  return () => ch.stopListening('.order.status_changed', cb);
+}

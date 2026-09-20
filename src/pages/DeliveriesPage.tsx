@@ -177,7 +177,7 @@ export function DeliveriesPage() {
     setActionId(id);
     try {
       await api.acceptDelivery(id);
-      show('Course acceptee !', 'success');
+      show('Course acceptée !', 'success');
       go({ name: 'active-delivery' });
     } catch (err: any) {
       show(err.message || 'Erreur.', 'error');
@@ -189,7 +189,7 @@ export function DeliveriesPage() {
     try {
       await api.declineDelivery(id);
       setPending(d => d.filter(x => x.id !== id));
-      show('Course refusee.', 'info');
+      show('Course refusée.', 'info');
     } catch (err: any) {
       show(err.message || 'Erreur.', 'error');
     } finally { setActionId(null); }
@@ -263,7 +263,7 @@ export function DeliveriesPage() {
                       </div>
                       <p className="font-bold text-base text-foreground">Aucune course disponible</p>
                       <p className="text-sm mt-1 text-muted-foreground max-w-[240px]">
-                        Nous recherchons des courses pres de vous. Restez en ligne.
+                        Nous recherchons des courses près de vous. Restez en ligne.
                       </p>
                       <div className="flex items-center gap-2 mt-5">
                         <Badge variant={driver?.is_available ? 'success' : 'muted'} dot className="py-1.5 px-3 rounded-full">
@@ -342,7 +342,7 @@ export function DeliveriesPage() {
                         <Inbox size={28} className="text-muted-foreground" />
                       </div>
                       <p className="font-bold text-base text-foreground">Aucune course terminee</p>
-                      <p className="text-sm mt-1 text-muted-foreground">Votre historique apparaitra ici.</p>
+                      <p className="text-sm mt-1 text-muted-foreground">Votre historique apparaîtra ici.</p>
                     </CardContent>
                   </Card>
                 </motion.div>

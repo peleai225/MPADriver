@@ -30,7 +30,7 @@ const fadeUp = {
 function getGreeting() {
   const h = new Date().getHours();
   if (h < 12) return 'Bonjour';
-  if (h < 18) return 'Bon apres-midi';
+  if (h < 18) return 'Bon après-midi';
   return 'Bonsoir';
 }
 
@@ -102,7 +102,7 @@ export function DashboardPage() {
     try {
       await api.setOnline(!driver.is_available);
       await refresh();
-      show(driver.is_available ? 'Vous etes hors ligne.' : 'Vous etes en ligne !', driver.is_available ? 'info' : 'success');
+      show(driver.is_available ? 'Vous êtes hors ligne.' : 'Vous êtes en ligne !', driver.is_available ? 'info' : 'success');
     } catch (err: any) {
       show(err.message || 'Erreur.', 'error');
     } finally {
@@ -157,7 +157,7 @@ export function DashboardPage() {
             <h1 className="text-[1.6rem] font-extrabold tracking-tight text-white leading-tight">
               {getGreeting()}{driver?.name ? `, ${driver.name.split(' ')[0]}` : ''}
             </h1>
-            <p className="text-white/50 text-sm mt-0.5">Pret a livrer aujourd'hui ?</p>
+            <p className="text-white/50 text-sm mt-0.5">Prêt à livrer aujourd'hui ?</p>
           </div>
 
           {/* Online toggle */}
@@ -177,7 +177,7 @@ export function DashboardPage() {
             </div>
             <div className="flex-1 text-left">
               <p className="font-bold text-sm text-white">
-                {togglingOnline ? 'Mise a jour...' : isOnline ? 'En ligne' : 'Hors ligne'}
+                {togglingOnline ? 'Mise à jour...' : isOnline ? 'En ligne' : 'Hors ligne'}
               </p>
               <p className="text-[11px] text-white/40">
                 {isOnline ? 'Vous recevez des courses' : 'Activez pour recevoir des courses'}
@@ -208,7 +208,7 @@ export function DashboardPage() {
                 <AlertTriangle size={18} className="text-destructive" />
               </div>
               <div className="flex-1 text-left">
-                <p className="font-bold text-sm text-destructive">Cash a reverser</p>
+                <p className="font-bold text-sm text-destructive">Cash à reverser</p>
                 <p className="text-xs text-destructive/70">{formatFCFA(cashOwed)} en attente</p>
               </div>
               <ChevronRight size={16} className="text-destructive/50" />
@@ -341,7 +341,7 @@ export function DashboardPage() {
                       {!isOnline
                         ? 'Passez en ligne pour voir les courses'
                         : pendingCount > 0
-                          ? `${pendingCount} en attente pres de vous`
+                          ? `${pendingCount} en attente près de vous`
                           : 'Aucune course pour le moment'}
                     </p>
                   </div>

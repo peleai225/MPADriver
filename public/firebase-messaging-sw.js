@@ -17,14 +17,16 @@ messaging.onBackgroundMessage((payload) => {
   const title = payload.notification?.title || 'MENUPRO Livraison';
   const body = payload.notification?.body || 'Nouvelle notification';
   const icon = '/logo.png';
+  const isNewOrder = payload.data?.type === 'new_delivery' || payload.data?.type === 'delivery_available';
 
   self.registration.showNotification(title, {
     body,
     icon,
     badge: icon,
-    tag: 'menupro-delivery',
+    tag: isNewOrder ? 'menupro-new-order' : 'menupro-delivery',
     requireInteraction: true,
-    vibrate: [200, 100, 200, 100, 200],
+    vibrate: isNewOrder ? [0, 500, 300, 500, 300, 500] : [200, 100, 200, 100, 200],
+    sound: '/sounds/new-order.mp3',
     data: payload.data,
   });
 });

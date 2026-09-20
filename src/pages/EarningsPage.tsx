@@ -53,11 +53,11 @@ export function EarningsPage() {
   const handlePayout = async () => {
     const amount = parseInt(payoutAmount);
     if (!amount || amount < 500) { show('Minimum 500 FCFA.', 'error'); return; }
-    if (!payoutPhone) { show('Entrez votre numero Wave.', 'error'); return; }
+    if (!payoutPhone) { show('Entrez votre numéro Wave.', 'error'); return; }
     setPayoutLoading(true);
     try {
       await api.requestPayout(amount, payoutPhone);
-      show('Demande de virement envoyee !', 'success');
+      show('Demande de virement envoyée !', 'success');
       setShowPayout(false); setPayoutAmount('');
       api.getEarnings().then(setSummary).catch(() => {});
     } catch (err: any) {
@@ -70,7 +70,7 @@ export function EarningsPage() {
     setRemitLoading(true);
     try {
       await api.declareCashRemittance({ debt_id: selectedDebt.id, amount_xof: selectedDebt.amount_xof, method: remitMethod, wave_reference: remitRef || undefined });
-      show('Reversement declare !', 'success');
+      show('Reversement déclaré !', 'success');
       setShowRemittance(false);
       api.getCashBalance().then(setCashBalance).catch(() => {});
     } catch (e: any) {
@@ -82,7 +82,7 @@ export function EarningsPage() {
     { label: "Aujourd'hui", value: summary?.today ?? 0, icon: CalendarDays, bg: 'bg-primary/10', color: 'text-primary' },
     { label: 'Cette semaine', value: summary?.this_week ?? 0, icon: Calendar, bg: 'bg-info-50', color: 'text-info-600' },
     { label: 'Ce mois', value: summary?.this_month ?? 0, icon: TrendingUp, bg: 'bg-success-50', color: 'text-success-600' },
-    { label: 'Total cumule', value: summary?.total_lifetime ?? 0, icon: Award, bg: 'bg-warning-50', color: 'text-warning-600' },
+    { label: 'Total cumulé', value: summary?.total_lifetime ?? 0, icon: Award, bg: 'bg-warning-50', color: 'text-warning-600' },
   ];
 
   return (
@@ -158,7 +158,7 @@ export function EarningsPage() {
                       <div className="text-right">
                         <p className="font-bold text-sm tabular text-foreground">{formatFCFA(debt.amount_xof)}</p>
                         <Button variant="link" size="sm" className="h-auto p-0 text-xs" onClick={() => { setSelectedDebt(debt); setShowRemittance(true); }}>
-                          Declarer
+                          Déclarer
                         </Button>
                       </div>
                     </CardContent>
@@ -189,7 +189,7 @@ export function EarningsPage() {
                   <Wallet size={24} className="text-muted-foreground" />
                 </div>
                 <p className="font-bold text-foreground">Aucun gain pour le moment</p>
-                <p className="text-sm mt-1 text-muted-foreground">Vos gains apparaitront ici apres chaque livraison.</p>
+                <p className="text-sm mt-1 text-muted-foreground">Vos gains apparaîtront ici après chaque livraison.</p>
               </CardContent>
             </Card>
           ) : (
@@ -210,7 +210,7 @@ export function EarningsPage() {
                     <div className="text-right">
                       <p className="font-extrabold text-base tabular text-success-500">+{formatFCFA(e.net_amount)}</p>
                       <Badge variant={e.status === 'paid' ? 'success' : 'default'} className="text-[10px]">
-                        {e.status === 'paid' ? 'Vire' : 'Disponible'}
+                        {e.status === 'paid' ? 'Viré' : 'Disponible'}
                       </Badge>
                     </div>
                   </CardContent>
@@ -251,7 +251,7 @@ export function EarningsPage() {
               <Input id="payout-amount" type="number" value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} placeholder="Min 500 FCFA" />
             </div>
             <div>
-              <Label htmlFor="payout-phone">Numero Wave *</Label>
+              <Label htmlFor="payout-phone">Numéro Wave *</Label>
               <Input id="payout-phone" type="tel" value={payoutPhone} onChange={e => setPayoutPhone(e.target.value)} placeholder="0701234567" />
             </div>
             <p className="text-xs text-muted-foreground">Maximum 3 virements par jour. Traitement sous 24h.</p>
@@ -266,7 +266,7 @@ export function EarningsPage() {
       <Sheet open={showRemittance} onOpenChange={setShowRemittance}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Declarer un reversement</SheetTitle>
+            <SheetTitle>Déclarer un reversement</SheetTitle>
             <SheetCloseButton />
           </SheetHeader>
           <div className="px-6 pb-6 space-y-4">
