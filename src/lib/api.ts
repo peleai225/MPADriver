@@ -1,4 +1,4 @@
-import type { Driver, Delivery, EarningsSummary, Earning } from './types';
+import type { Driver, Delivery, EarningsSummary, Earning, IssueType } from './types';
 
 export const API_BASE = (import.meta.env.VITE_API_BASE as string) || 'https://www.menupro.ci/api/v1';
 
@@ -151,6 +151,37 @@ export const api = {
     await request('/driver/earnings/payout', {
       method: 'POST',
       body: JSON.stringify({ amount, payment_method: 'wave', mobile: phone }),
+    });
+  },
+
+  // Delivery verification
+  async verifyDeliveryCode(deliveryId: number, code: string): Promise<{ valid: boolean; message: string }> {
+    return await request(`/driver/deliveries/${deliveryId}/verify-code`, {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
+  async uploadDeliveryProof(deliveryId: number, photo: File): Promise<{ message: string }> {
+    const form = new FormData();
+    form.append('photo', photo);
+    return await request(`/driver/deliveries/${deliveryId}/upload-proof`, {
+      method: 'POST',
+      body: form,
+    });
+  },
+
+  async reportIssue(deliveryId: number, issueType: IssueType, details?: string): Promise<{ message: string }> {
+    return await request(`/driver/deliveries/${deliveryId}/report-issue`, {
+      method: 'POST',
+      body: JSON.stringify({ issue_type: issueType, issue_details: details }),
+    });
+  },
+
+  async cancelDelivery(deliveryId: number, reason: string): Promise<void> {
+    await request(`/driver/deliveries/${deliveryId}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     });
   },
 

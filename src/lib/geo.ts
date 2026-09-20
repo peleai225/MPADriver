@@ -1,8 +1,16 @@
+export interface GeoPosition {
+  lat: number;
+  lng: number;
+  accuracy?: number;
+  speed?: number;
+  heading?: number;
+}
+
 let watchId: number | null = null;
 let lastSent = 0;
 const THROTTLE_MS = 5000;
 
-export function startTracking(onLocation: (lat: number, lng: number) => void): void {
+export function startTracking(onLocation: (pos: GeoPosition) => void): void {
   if (watchId !== null) return;
   if (!navigator.geolocation) return;
 
@@ -11,7 +19,14 @@ export function startTracking(onLocation: (lat: number, lng: number) => void): v
       const now = Date.now();
       if (now - lastSent < THROTTLE_MS) return;
       lastSent = now;
-      onLocation(pos.coords.latitude, pos.coords.longitude);
+      const c = pos.coords;
+      onLocation({
+        lat: c.latitude,
+        lng: c.longitude,
+        accuracy: c.accuracy ?? undefined,
+        speed: c.speed != null && c.speed >= 0 ? c.speed : undefined,
+        heading: c.heading != null && c.heading >= 0 ? c.heading : undefined,
+      });
     },
     (err) => console.warn('GPS error:', err.message),
     { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 },

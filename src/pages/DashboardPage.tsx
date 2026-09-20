@@ -2,7 +2,8 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Wallet, Package, Star, ChevronRight, Truck,
-  Bell, Power, ArrowUpRight, Clock, MapPin,
+  Power, ArrowUpRight, Clock, MapPin, History, Headphones,
+  AlertTriangle, Banknote,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
@@ -13,7 +14,6 @@ import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, notify, playAlert, requestNotificationPermission } from '../lib/alert';
 import { requestPushToken, onForegroundMessage } from '../lib/firebase';
 import type { EarningsSummary, Delivery } from '../lib/types';
-import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Progress } from '../components/ui/progress';
@@ -42,6 +42,7 @@ export function DashboardPage() {
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<Delivery | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [cashOwed, setCashOwed] = useState(0);
   const [togglingOnline, setTogglingOnline] = useState(false);
   const unsubsRef = useRef<Array<() => void>>([]);
 
@@ -56,6 +57,7 @@ export function DashboardPage() {
   useEffect(() => {
     api.getEarnings().then(setEarnings).catch(() => {});
     api.getActiveDelivery().then(setActiveDelivery).catch(() => {});
+    api.getCashBalance().then(r => setCashOwed(r.total_owed_xof ?? 0)).catch(() => {});
     loadPending(true);
     requestNotificationPermission();
     requestPushToken().catch(() => {});
@@ -118,13 +120,13 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen pb-28 bg-background">
 
-      {/* ── HERO HEADER (MPA-style) ── */}
+      {/* ── HERO HEADER ── */}
       <div className="relative bg-foreground overflow-hidden safe-top">
         <div className="absolute -top-10 -right-10 w-72 h-72 rounded-full opacity-25" style={{ background: 'radial-gradient(circle, #F97316 0%, transparent 65%)' }} />
         <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #EA580C 0%, transparent 65%)' }} />
 
         <div className="relative px-5 pt-4 pb-5">
-          {/* Top bar: logo + city + avatar + bell */}
+          {/* Top bar: logo + city + rating + avatar */}
           <div className="flex items-center justify-between mb-4">
             <div className="bg-white rounded-2xl p-1.5 shadow-soft">
               <img src="/logo.png" alt="MenuPro" className="w-9 h-9 object-contain" />
@@ -136,14 +138,10 @@ export function DashboardPage() {
                 {driver?.city ?? 'Ville'}
               </div>
 
-              <button className="relative tap">
-                <Bell size={20} className="text-white/80" />
-                {pendingCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-[9px] font-bold text-white flex items-center justify-center">
-                    {pendingCount > 9 ? '9+' : pendingCount}
-                  </span>
-                )}
-              </button>
+              <div className="inline-flex items-center gap-1 text-xs text-white/90 bg-white/10 border border-white/20 rounded-full px-2.5 py-1.5 font-semibold">
+                <Star size={12} fill="currentColor" className="text-warning-500" />
+                {ratingNum.toFixed(1)}
+              </div>
 
               <Avatar className="h-9 w-9 ring-2 ring-white/20">
                 {photoUrl ? <AvatarImage src={photoUrl} /> : null}
@@ -162,7 +160,7 @@ export function DashboardPage() {
             <p className="text-white/50 text-sm mt-0.5">Pret a livrer aujourd'hui ?</p>
           </div>
 
-          {/* Online toggle — integrated in header */}
+          {/* Online toggle */}
           <button
             onClick={toggleOnline}
             disabled={togglingOnline || !!activeDelivery}
@@ -196,10 +194,29 @@ export function DashboardPage() {
         variants={stagger}
         initial="hidden"
         animate="show"
-        className="px-5 space-y-3 -mt-0 pt-4"
+        className="px-5 space-y-3 pt-4"
       >
 
-        {/* ── COURSE ACTIVE ── */}
+        {/* ── CASH ALERT ── */}
+        {cashOwed > 0 && (
+          <motion.div variants={fadeUp}>
+            <button
+              onClick={() => go({ name: 'earnings' })}
+              className="w-full flex items-center gap-3 rounded-2xl px-4 py-3 bg-destructive/10 border border-destructive/20 tap"
+            >
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-destructive/15">
+                <AlertTriangle size={18} className="text-destructive" />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-bold text-sm text-destructive">Cash a reverser</p>
+                <p className="text-xs text-destructive/70">{formatFCFA(cashOwed)} en attente</p>
+              </div>
+              <ChevronRight size={16} className="text-destructive/50" />
+            </button>
+          </motion.div>
+        )}
+
+        {/* ── ACTIVE DELIVERY ── */}
         {activeDelivery && (
           <motion.div variants={fadeUp}>
             <Card className="overflow-hidden border-0 gradient-dark shadow-elevated">
@@ -216,7 +233,7 @@ export function DashboardPage() {
                       <p className="text-white font-bold text-sm">Course en cours</p>
                       <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
                     </div>
-                    <p className="text-white/50 text-xs truncate mt-0.5">{activeDelivery.order.restaurant.name}</p>
+                    <p className="text-white/50 text-xs truncate mt-0.5">{activeDelivery.order?.restaurant?.name ?? 'Course'}</p>
                   </div>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
                     <ArrowUpRight size={16} className="text-white" />
@@ -304,16 +321,16 @@ export function DashboardPage() {
         {/* ── COURSES DISPONIBLES ── */}
         {!activeDelivery && (
           <motion.div variants={fadeUp}>
-            <Card className="shadow-xs">
+            <Card className={`shadow-xs transition-all ${pendingCount > 0 && isOnline ? 'border-primary/30 bg-primary/[0.03] shadow-card' : ''}`}>
               <CardContent className="p-0">
                 <button
                   onClick={() => isOnline ? go({ name: 'deliveries' }) : undefined}
                   className="w-full px-4 py-3.5 flex items-center gap-3 tap"
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10 relative">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 relative ${pendingCount > 0 && isOnline ? 'bg-primary/15' : 'bg-primary/10'}`}>
                     <Package size={18} className="text-primary" />
-                    {pendingCount > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-primary text-[9px] font-bold text-white flex items-center justify-center">
+                    {pendingCount > 0 && isOnline && (
+                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary text-[10px] font-bold text-white flex items-center justify-center animate-pulse">
                         {pendingCount > 9 ? '9+' : pendingCount}
                       </span>
                     )}
@@ -321,9 +338,11 @@ export function DashboardPage() {
                   <div className="flex-1 text-left">
                     <p className="font-semibold text-sm text-foreground">Courses disponibles</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {pendingCount > 0
-                        ? `${pendingCount} en attente pres de vous`
-                        : 'Aucune course pour le moment'}
+                      {!isOnline
+                        ? 'Passez en ligne pour voir les courses'
+                        : pendingCount > 0
+                          ? `${pendingCount} en attente pres de vous`
+                          : 'Aucune course pour le moment'}
                     </p>
                   </div>
                   <ChevronRight size={16} className="text-muted-foreground" />
@@ -333,67 +352,30 @@ export function DashboardPage() {
           </motion.div>
         )}
 
-        {/* ── PERFORMANCE ── */}
+        {/* ── RACCOURCIS ── */}
         <motion.div variants={fadeUp}>
-          <Card className="shadow-xs">
-            <CardContent className="p-4">
-              <p className="font-bold text-sm text-foreground mb-3">Performance</p>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-1.5 bg-primary/10">
-                    <Truck size={16} className="text-primary" />
-                  </div>
-                  <p className="font-bold text-lg tabular text-foreground leading-tight">{dailyDone}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Courses</p>
-                </div>
-
-                <div className="text-center border-x border-border">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-1.5 bg-primary/10">
-                    <TrendingUp size={16} className="text-primary" />
-                  </div>
-                  <p className="font-bold text-lg tabular text-foreground leading-tight">
-                    {formatFCFA(earnings?.this_week ?? 0)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Semaine</p>
-                </div>
-
-                <div className="text-center">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-1.5 bg-warning-50">
-                    <Star size={16} className="text-warning-500" />
-                  </div>
-                  <p className="font-bold text-lg tabular text-foreground leading-tight">{ratingNum.toFixed(1)}</p>
-                  <div className="flex items-center justify-center gap-px mt-0.5">
-                    {[1,2,3,4,5].map(i => (
-                      <Star key={i} size={8} fill={i <= Math.round(ratingNum) ? 'currentColor' : 'none'} className="text-warning-500" />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* ── ZONE ── */}
-        <motion.div variants={fadeUp}>
-          <Card className="shadow-xs border-primary/10 bg-primary/[0.03]">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-primary/10">
-                <MapPin size={18} className="text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-foreground">Zone active</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {driver?.city ?? 'Non definie'}{driver?.zone ? ` · ${driver.zone}` : ''}
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => go({ name: 'earnings' })} className="shrink-0 text-xs">
-                Mes stats
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-4 gap-2">
+            <QuickAction icon={Wallet} label="Gains" onClick={() => go({ name: 'earnings' })} />
+            <QuickAction icon={History} label="Historique" onClick={() => go({ name: 'deliveries' })} />
+            <QuickAction icon={Banknote} label="Cash" onClick={() => go({ name: 'earnings' })} accent={cashOwed > 0} />
+            <QuickAction icon={Headphones} label="Aide" onClick={() => window.open('tel:+2250501862640')} />
+          </div>
         </motion.div>
 
       </motion.div>
     </div>
+  );
+}
+
+function QuickAction({ icon: Icon, label, onClick, accent }: {
+  icon: React.ElementType; label: string; onClick: () => void; accent?: boolean;
+}) {
+  return (
+    <button onClick={onClick} className="flex flex-col items-center gap-1.5 py-3 tap rounded-2xl">
+      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${accent ? 'bg-destructive/10' : 'bg-muted'}`}>
+        <Icon size={18} className={accent ? 'text-destructive' : 'text-foreground'} />
+      </div>
+      <span className="text-[11px] font-medium text-muted-foreground">{label}</span>
+    </button>
   );
 }

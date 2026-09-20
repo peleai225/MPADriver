@@ -288,6 +288,7 @@ export function EarningsPage() {
                 <option value="wave">Wave</option>
                 <option value="orange_money">Orange Money</option>
                 <option value="mtn_money">MTN MoMo</option>
+                <option value="moov_money">Moov Money</option>
                 <option value="cash">Cash (en main propre)</option>
               </select>
             </div>

@@ -3,13 +3,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
 firebase.initializeApp({
-  apiKey: 'AIzaSyCAtE67l5tUyTXcmlNLOru38xb0DtkKFZ4',
+  apiKey: 'AIzaSyBzuD3GslwU2eCCksKx5ABB_Izc4AEQ-Z8',
   authDomain: 'menuprodelivr.firebaseapp.com',
   projectId: 'menuprodelivr',
   storageBucket: 'menuprodelivr.firebasestorage.app',
   messagingSenderId: '588623912053',
-  // TODO: remplacer par l'appId web
-  appId: '1:588623912053:web:REPLACE_ME',
+  appId: '1:588623912053:web:ef957000a57e24f52aac3c',
 });
 
 const messaging = firebase.messaging();

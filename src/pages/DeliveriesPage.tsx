@@ -32,23 +32,24 @@ const fadeUp = {
 };
 
 function CompletedCard({ delivery }: { delivery: Delivery }) {
-  const { order } = delivery;
+  const order = delivery.order;
   const statusLabel = DELIVERY_STATUS_LABELS[delivery.status] ?? delivery.status;
   const isDone = delivery.status === 'delivered';
+  const restaurant = order?.restaurant;
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
         <div className="px-4 py-3 flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-primary/8 overflow-hidden">
-            {order.restaurant.logo_url
-              ? <img src={order.restaurant.logo_url} alt="" className="w-full h-full object-cover" />
+            {restaurant?.logo_url
+              ? <img src={restaurant.logo_url} alt="" className="w-full h-full object-cover" />
               : <div className="w-full h-full flex items-center justify-center bg-muted"><Package size={18} className="text-muted-foreground" /></div>}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm truncate text-foreground">{order.restaurant.name}</p>
+            <p className="font-bold text-sm truncate text-foreground">{restaurant?.name ?? 'Restaurant'}</p>
             <div className="flex items-center gap-1 mt-0.5">
               <MapPin size={11} className="text-muted-foreground" />
-              <p className="text-xs truncate text-muted-foreground">{order.delivery_address.split(',')[0]}</p>
+              <p className="text-xs truncate text-muted-foreground">{order?.delivery_address?.split(',')[0] ?? '—'}</p>
             </div>
           </div>
           <div className="text-right shrink-0">
@@ -61,8 +62,8 @@ function CompletedCard({ delivery }: { delivery: Delivery }) {
           </div>
         </div>
         <div className="px-4 pb-3 flex items-center gap-4 border-t border-border/60">
-          <span className="text-xs text-muted-foreground tabular">#{order.reference}</span>
-          <span className="text-xs text-muted-foreground">{order.items.length} article{order.items.length > 1 ? 's' : ''}</span>
+          <span className="text-xs text-muted-foreground tabular">#{order?.reference ?? '—'}</span>
+          <span className="text-xs text-muted-foreground">{order?.items?.length ?? 0} article{(order?.items?.length ?? 0) > 1 ? 's' : ''}</span>
           {delivery.distance_km != null && (
             <div className="flex items-center gap-1">
               <MapPin size={10} className="text-muted-foreground" />
@@ -86,7 +87,7 @@ function ActiveDeliveryBanner({ delivery, onGo }: { delivery: Delivery; onGo: ()
           <div className="flex-1 min-w-0">
             <p className="text-white/60 text-[10px] font-semibold uppercase tracking-wider">Course en cours</p>
             <p className="text-white font-bold text-sm leading-tight mt-0.5 truncate">
-              {delivery.order.restaurant.name}
+              {delivery.order?.restaurant?.name ?? 'Course'}
             </p>
             <div className="flex items-center gap-1 mt-1">
               <Clock size={11} className="text-white/50" />

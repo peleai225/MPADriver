@@ -41,8 +41,8 @@ export function ActiveDeliveryPage() {
 
   useEffect(() => {
     if (!delivery) return;
-    startTracking(async (lat, lng) => {
-      try { await api.updateLocation(lat, lng); } catch { }
+    startTracking(async (pos) => {
+      try { await api.updateLocation(pos.lat, pos.lng, pos.accuracy, pos.speed, pos.heading); } catch { }
     });
     return () => stopTracking();
   }, [delivery?.id]);
@@ -129,7 +129,19 @@ export function ActiveDeliveryPage() {
     </div>
   );
 
-  const { order } = delivery!;
+  const order = delivery!.order;
+  if (!order) return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center bg-background">
+      <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-5 bg-muted">
+        <Truck size={36} className="text-muted-foreground" />
+      </div>
+      <p className="font-extrabold text-xl text-foreground">Chargement de la commande...</p>
+      <p className="text-sm mt-2 text-muted-foreground">Les details arrivent.</p>
+      <Button onClick={() => { api.getActiveDelivery().then(d => setDelivery(d)).catch(() => {}); }} size="lg" className="mt-6 rounded-full">
+        Recharger
+      </Button>
+    </div>
+  );
   const isPickingUp = delivery!.status === 'assigned' || delivery!.status === 'heading_to_restaurant';
   const targetLat = isPickingUp ? order.restaurant.latitude : order.delivery_latitude;
   const targetLng = isPickingUp ? order.restaurant.longitude : order.delivery_longitude;

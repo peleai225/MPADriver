@@ -28,8 +28,12 @@ function useCountdown(seconds: number) {
 }
 
 export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) {
-  const { order } = delivery;
+  const order = delivery.order;
   const { label: timer, expired } = useCountdown(EXPIRE_SECONDS);
+
+  if (!order) return null;
+
+  const restaurant = order.restaurant;
 
   return (
     <Card className="overflow-hidden animate-fade-up">
@@ -43,8 +47,8 @@ export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) 
       <div className="px-4 pb-3 flex gap-3">
         {/* Logo restaurant */}
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-primary/8 overflow-hidden">
-          {order.restaurant.logo_url
-            ? <img src={order.restaurant.logo_url} alt="" className="w-full h-full object-cover" />
+          {restaurant?.logo_url
+            ? <img src={restaurant.logo_url} alt="" className="w-full h-full object-cover" />
             : <Package size={20} className="text-muted-foreground" />}
         </div>
 
@@ -52,15 +56,15 @@ export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-0.5">
             <p className="font-extrabold text-base leading-tight truncate text-foreground">
-              {order.restaurant.address || order.restaurant.name}
+              {restaurant?.address || restaurant?.name || 'Restaurant'}
             </p>
             <ChevronRight size={14} className="text-primary shrink-0" />
             <p className="font-extrabold text-base leading-tight truncate text-foreground">
-              {order.delivery_address.split(',')[0]}
+              {order.delivery_address?.split(',')[0] || 'Client'}
             </p>
           </div>
           <p className="text-xs mb-1 text-muted-foreground">Restaurant / vendeur</p>
-          <p className="text-sm font-bold text-foreground">{order.restaurant.name}</p>
+          <p className="text-sm font-bold text-foreground">{restaurant?.name || '—'}</p>
 
           <div className="flex items-center gap-1.5 mt-1.5">
             <ClipboardList size={13} className="text-muted-foreground" />
@@ -69,7 +73,7 @@ export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) 
             </span>
           </div>
           <p className="text-xs mt-0.5 text-muted-foreground">
-            {order.items.length} article{order.items.length > 1 ? 's' : ''} · {formatFCFA(order.total)}
+            {order.items?.length ?? 0} article{(order.items?.length ?? 0) > 1 ? 's' : ''} · {formatFCFA(order.total)}
           </p>
         </div>
 

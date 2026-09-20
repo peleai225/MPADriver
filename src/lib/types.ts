@@ -43,10 +43,14 @@ export interface DeliveryOrder {
   items: { name: string; quantity: number }[];
 }
 
+export type IssueTypeRestaurant = 'restaurant_closed' | 'order_not_ready' | 'items_missing' | 'order_cancelled_by_restaurant';
+export type IssueTypeClient = 'client_absent' | 'address_not_found' | 'order_refused' | 'order_damaged' | 'accident';
+export type IssueType = IssueTypeRestaurant | IssueTypeClient;
+
 export interface Delivery {
   id: number;
   status: DeliveryStatus;
-  order: DeliveryOrder;
+  order?: DeliveryOrder;
   distance_km?: number;
   estimated_minutes?: number;
   driver_earning_estimate?: number;
