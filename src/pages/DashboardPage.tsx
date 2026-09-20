@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Wallet, Package, Star, ChevronRight, Truck,
-  Bell, Zap, ArrowUpRight, Clock, MapPin,
+  Bell, Power, ArrowUpRight, Clock, MapPin,
 } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
@@ -14,7 +14,6 @@ import { vibrate, notify, playAlert, requestNotificationPermission } from '../li
 import type { EarningsSummary, Delivery } from '../lib/types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
-import { Switch } from '../components/ui/switch';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
 import { Progress } from '../components/ui/progress';
 
@@ -26,6 +25,13 @@ const fadeUp = {
   hidden: { opacity: 0, y: 14 },
   show: { opacity: 1, y: 0, transition: { duration: 0.35 } },
 };
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Bonjour';
+  if (h < 18) return 'Bon apres-midi';
+  return 'Bonsoir';
+}
 
 export function DashboardPage() {
   const { driver, refresh } = useAuth();
@@ -70,8 +76,8 @@ export function DashboardPage() {
         if (!active) return;
         api.getActiveDelivery().then(d => setActiveDelivery(d)).catch(() => {});
         vibrate([300,100,300,100,500]); playAlert();
-        notify('Course assignée !', `Commande ${data?.order_ref ?? ''} — allez chercher la commande.`, () => go({ name: 'active-delivery' }));
-        show('Course assignée — démarrez !', 'success');
+        notify('Course assignee !', `Commande ${data?.order_ref ?? ''} — allez chercher la commande.`, () => go({ name: 'active-delivery' }));
+        show('Course assignee — demarrez !', 'success');
       }).then(u => { if (active) unsubs.push(u); });
     }
     unsubsRef.current = unsubs;
@@ -84,7 +90,7 @@ export function DashboardPage() {
     try {
       await api.setOnline(!driver.is_available);
       await refresh();
-      show(driver.is_available ? 'Vous êtes hors ligne.' : 'Vous êtes en ligne !', driver.is_available ? 'info' : 'success');
+      show(driver.is_available ? 'Vous etes hors ligne.' : 'Vous etes en ligne !', driver.is_available ? 'info' : 'success');
     } catch (err: any) {
       show(err.message || 'Erreur.', 'error');
     } finally {
@@ -102,31 +108,77 @@ export function DashboardPage() {
   return (
     <div className="min-h-screen pb-28 bg-background">
 
-      {/* ── HEADER ── */}
-      <div className="px-5 pt-safe pt-4 pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Avatar className="h-11 w-11 ring-2 ring-card shadow-soft">
+      {/* ── HERO HEADER (MPA-style) ── */}
+      <div className="relative bg-foreground overflow-hidden safe-top">
+        <div className="absolute -top-10 -right-10 w-72 h-72 rounded-full opacity-25" style={{ background: 'radial-gradient(circle, #F97316 0%, transparent 65%)' }} />
+        <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, #EA580C 0%, transparent 65%)' }} />
+
+        <div className="relative px-5 pt-4 pb-5">
+          {/* Top bar: logo + city + avatar + bell */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-2xl p-1.5 shadow-soft">
+              <img src="/logo.png" alt="MenuPro" className="w-9 h-9 object-contain" />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center gap-1.5 text-xs text-white/90 bg-white/10 border border-white/20 rounded-full px-3 py-1.5 font-semibold">
+                <MapPin size={13} className="text-primary" />
+                {driver?.city ?? 'Ville'}
+              </div>
+
+              <button className="relative tap">
+                <Bell size={20} className="text-white/80" />
+                {pendingCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-primary text-[9px] font-bold text-white flex items-center justify-center">
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
+              </button>
+
+              <Avatar className="h-9 w-9 ring-2 ring-white/20">
                 {photoUrl ? <AvatarImage src={photoUrl} /> : null}
-                <AvatarFallback className="bg-primary text-primary-foreground font-bold text-base">
+                <AvatarFallback className="bg-primary text-white font-bold text-sm">
                   {driver?.name?.[0]?.toUpperCase() ?? 'L'}
                 </AvatarFallback>
               </Avatar>
-              <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card ${isOnline ? 'bg-success-500' : 'bg-muted-foreground'}`} />
-            </div>
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">Bonjour</p>
-              <p className="font-bold text-base leading-tight text-foreground">
-                {driver?.name?.split(' ')[0] || 'Livreur'}
-              </p>
             </div>
           </div>
 
-          <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-full bg-card shadow-xs">
-            <Bell size={18} strokeWidth={2} className="text-foreground" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" />
-          </Button>
+          {/* Greeting */}
+          <div className="mb-4">
+            <h1 className="text-[1.6rem] font-extrabold tracking-tight text-white leading-tight">
+              {getGreeting()}{driver?.name ? `, ${driver.name.split(' ')[0]}` : ''}
+            </h1>
+            <p className="text-white/50 text-sm mt-0.5">Pret a livrer aujourd'hui ?</p>
+          </div>
+
+          {/* Online toggle — integrated in header */}
+          <button
+            onClick={toggleOnline}
+            disabled={togglingOnline || !!activeDelivery}
+            className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 tap transition-all disabled:opacity-60 ${
+              isOnline
+                ? 'bg-success-500/20 border border-success-500/30'
+                : 'bg-white/8 border border-white/15'
+            }`}
+          >
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+              isOnline ? 'bg-success-500' : 'bg-white/15'
+            }`}>
+              <Power size={20} strokeWidth={2.5} className={isOnline ? 'text-white' : 'text-white/50'} />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-bold text-sm text-white">
+                {togglingOnline ? 'Mise a jour...' : isOnline ? 'En ligne' : 'Hors ligne'}
+              </p>
+              <p className="text-[11px] text-white/40">
+                {isOnline ? 'Vous recevez des courses' : 'Activez pour recevoir des courses'}
+              </p>
+            </div>
+            <div className={`w-12 h-7 rounded-full relative transition-colors ${isOnline ? 'bg-success-500' : 'bg-white/20'}`}>
+              <div className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-sm transition-transform ${isOnline ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </div>
+          </button>
         </div>
       </div>
 
@@ -134,46 +186,8 @@ export function DashboardPage() {
         variants={stagger}
         initial="hidden"
         animate="show"
-        className="px-5 space-y-3"
+        className="px-5 space-y-3 -mt-0 pt-4"
       >
-
-        {/* ── TOGGLE EN LIGNE ── */}
-        <motion.div variants={fadeUp}>
-          <Card
-            className={`overflow-hidden transition-all duration-300 ${
-              isOnline
-                ? 'border-success-500/30 bg-success-50 shadow-soft'
-                : 'border-border'
-            }`}
-          >
-            <CardContent className="p-4">
-              <button
-                onClick={toggleOnline}
-                disabled={togglingOnline || !!activeDelivery}
-                className="w-full flex items-center gap-3.5 tap disabled:opacity-60"
-              >
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                  isOnline ? 'bg-success-500' : 'bg-muted'
-                }`}>
-                  <Zap size={20} strokeWidth={2.5} className={isOnline ? 'text-white' : 'text-muted-foreground'} />
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-bold text-sm text-foreground">
-                    {togglingOnline ? 'Mise à jour...' : isOnline ? 'Vous êtes en ligne' : 'Vous êtes hors ligne'}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {isOnline ? 'Vous recevez des courses' : 'Activez pour recevoir des courses'}
-                  </p>
-                </div>
-                <Switch
-                  checked={isOnline}
-                  disabled={togglingOnline || !!activeDelivery}
-                  className={isOnline ? 'bg-success-500' : ''}
-                />
-              </button>
-            </CardContent>
-          </Card>
-        </motion.div>
 
         {/* ── COURSE ACTIVE ── */}
         {activeDelivery && (
@@ -222,7 +236,7 @@ export function DashboardPage() {
                     onClick={() => go({ name: 'earnings' })}
                     className="flex items-center gap-1 text-white/60 text-xs font-medium tap hover:text-white/90"
                   >
-                    Détails <ChevronRight size={12} />
+                    Details <ChevronRight size={12} />
                   </button>
                 </div>
 
@@ -239,7 +253,7 @@ export function DashboardPage() {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Clock size={12} className="text-white/60" />
-                    <span className="text-white/70 text-xs">
+                    <span className="text-white/70 text-xs tabular">
                       Semaine : {formatFCFA(earnings?.this_week ?? 0)}
                     </span>
                   </div>
@@ -267,7 +281,7 @@ export function DashboardPage() {
             <CardContent className="p-3.5">
               <div className="flex items-center justify-between mb-2.5">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-primary/10">
-                  <Zap size={16} className="text-primary" />
+                  <Truck size={16} className="text-primary" />
                 </div>
                 <span className="text-xs font-bold tabular text-primary">{dailyDone}/{dailyGoal}</span>
               </div>
@@ -298,7 +312,7 @@ export function DashboardPage() {
                     <p className="font-semibold text-sm text-foreground">Courses disponibles</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {pendingCount > 0
-                        ? `${pendingCount} en attente près de vous`
+                        ? `${pendingCount} en attente pres de vous`
                         : 'Aucune course pour le moment'}
                     </p>
                   </div>
@@ -349,7 +363,7 @@ export function DashboardPage() {
           </Card>
         </motion.div>
 
-        {/* ── QUICK ACTIONS ── */}
+        {/* ── ZONE ── */}
         <motion.div variants={fadeUp}>
           <Card className="shadow-xs border-primary/10 bg-primary/[0.03]">
             <CardContent className="p-4 flex items-center gap-3">
@@ -359,7 +373,7 @@ export function DashboardPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm text-foreground">Zone active</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {driver?.city ?? 'Non définie'}{driver?.zone ? ` · ${driver.zone}` : ''}
+                  {driver?.city ?? 'Non definie'}{driver?.zone ? ` · ${driver.zone}` : ''}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => go({ name: 'earnings' })} className="shrink-0 text-xs">

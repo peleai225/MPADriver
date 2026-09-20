@@ -53,9 +53,48 @@ export function disconnectEcho(): void {
   }
 }
 
-// ─── Helpers de souscription ──────────────────────────────────────────────────
+function reconnectEcho(): void {
+  if (!echoInstance) return;
+  try {
+    const connector = echoInstance.connector as any;
+    const pusher = connector?.pusher;
+    if (pusher && typeof pusher.connect === 'function') {
+      if (pusher.connection?.state !== 'connected') {
+        pusher.connect();
+      }
+    }
+  } catch {}
+}
 
-/** Canal public ville : nouvelle course disponible */
+function refreshAuthHeaders(): void {
+  if (!echoInstance) return;
+  try {
+    const token = getToken();
+    if (!token) return;
+    const connector = echoInstance.connector as any;
+    if (connector?.pusher?.config?.auth?.headers) {
+      connector.pusher.config.auth.headers.Authorization = `Bearer ${token}`;
+    }
+    if ((echoInstance.options as any)?.auth?.headers) {
+      (echoInstance.options as any).auth.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch {}
+}
+
+if (typeof window !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refreshAuthHeaders();
+      reconnectEcho();
+    }
+  });
+
+  window.addEventListener('online', () => {
+    refreshAuthHeaders();
+    reconnectEcho();
+  });
+}
+
 export async function listenNewDelivery(city: string, cb: () => void): Promise<() => void> {
   const echo = await getEcho();
   if (!echo) return () => {};
@@ -65,7 +104,6 @@ export async function listenNewDelivery(city: string, cb: () => void): Promise<(
   return () => ch.stopListening('.delivery.available', cb);
 }
 
-/** Canal privé livreur : assignation automatique */
 export async function listenDriverAssigned(driverId: number, cb: (data: any) => void): Promise<() => void> {
   const echo = await getEcho();
   if (!echo) return () => {};
@@ -74,7 +112,6 @@ export async function listenDriverAssigned(driverId: number, cb: (data: any) => 
   return () => ch.stopListening('.driver.assigned', cb);
 }
 
-/** Canal privé livreur : changement de statut livraison (annulation, etc.) */
 export async function listenDeliveryStatus(driverId: number, cb: (data: any) => void): Promise<() => void> {
   const echo = await getEcho();
   if (!echo) return () => {};
