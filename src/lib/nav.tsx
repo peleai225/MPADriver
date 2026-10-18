@@ -28,9 +28,28 @@ const Ctx = createContext<NavCtx>({
 });
 export const useNav = () => useContext(Ctx);
 
+/**
+ * Écran demandé par un clic sur une notification push (lien `/?open=deliveries`, `/?open=active-delivery`).
+ * Le paramètre est retiré de l'URL pour ne pas rouvrir le même écran au rechargement.
+ */
+function initialRoute(): Route {
+  try {
+    const url = new URL(window.location.href);
+    const open = url.searchParams.get('open');
+    if (open) {
+      url.searchParams.delete('open');
+      window.history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
+    if (open === 'deliveries') return { name: 'deliveries' };
+    if (open === 'active-delivery') return { name: 'active-delivery' };
+  } catch {}
+  return { name: 'dashboard' };
+}
+
 export function NavProvider({ children }: { children: ReactNode }) {
-  const [stack, setStack] = useState<Route[]>([{ name: 'dashboard' }]);
-  const [tab, setTab] = useState<NavCtx['tab']>('dashboard');
+  const [stack, setStack] = useState<Route[]>(() => [initialRoute()]);
+  const [tab, setTab] = useState<NavCtx['tab']>(() =>
+    stack[0]?.name === 'deliveries' ? 'deliveries' : 'dashboard');
 
   const push    = useCallback((r: Route) => setStack(s => [...s, r]), []);
   const replace = useCallback((r: Route) => setStack(s => [...s.slice(0, -1), r]), []);

@@ -28,6 +28,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Le service worker principal détient l'abonnement push : il doit charger Firebase
+        // pour afficher les notifications quand l'application est fermée.
+        importScripts: ['/firebase-messaging-sw.js'],
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         runtimeCaching: [
           {

@@ -5,17 +5,23 @@ export function vibrate(pattern: number[] = [200, 100, 200]): void {
 
 /** Notification système navigateur (fonctionne même app en arrière-plan) */
 export function notify(title: string, body: string, onClick?: () => void): void {
-  if (Notification.permission !== 'granted') return;
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  const options = {
+    body,
+    icon: '/logo.png',
+    badge: '/logo.png',
+    tag: 'driver-alert',
+    requireInteraction: true,
+  };
   try {
-    const n = new Notification(title, {
-      body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: 'driver-alert',
-      requireInteraction: true,
-    });
+    const n = new Notification(title, options);
     if (onClick) n.onclick = () => { window.focus(); n.close(); onClick(); };
-  } catch {}
+  } catch {
+    // Android refuse new Notification() : il faut passer par le service worker
+    navigator.serviceWorker?.ready
+      .then((reg) => reg.showNotification(title, options))
+      .catch(() => {});
+  }
 }
 
 /** Demande la permission notifications si pas encore accordée */
