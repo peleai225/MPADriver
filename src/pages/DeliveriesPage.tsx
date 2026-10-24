@@ -18,6 +18,8 @@ import { Card, CardContent } from '../components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { Skeleton } from '../components/ui/skeleton';
 import { usePullToRefresh } from '../lib/usePullToRefresh';
+import { clearBadge } from '../lib/badge';
+import { DELIVERY_CANCELLED_EVENT } from '../lib/deliveryEvents';
 import type { Delivery } from '../lib/types';
 import { formatFCFA, DELIVERY_STATUS_LABELS } from '../lib/format';
 
@@ -175,6 +177,16 @@ export function DeliveriesPage() {
     loadActive();
     const interval = setInterval(() => { loadPending(true); loadActive(); }, 20000);
     return () => clearInterval(interval);
+  }, [loadPending, loadActive]);
+
+  // Le livreur consulte ses courses : le compteur de l'icône n'a plus lieu d'être.
+  useEffect(() => { clearBadge(); }, []);
+
+  // Course annulée (push reçu au premier plan) : on rafraîchit les listes.
+  useEffect(() => {
+    const onCancelled = () => { loadPending(true); loadActive(); };
+    window.addEventListener(DELIVERY_CANCELLED_EVENT, onCancelled);
+    return () => window.removeEventListener(DELIVERY_CANCELLED_EVENT, onCancelled);
   }, [loadPending, loadActive]);
 
   useEffect(() => {

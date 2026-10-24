@@ -14,6 +14,7 @@ import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, notify, playAlert, requestNotificationPermission } from '../lib/alert';
 import { requestPushToken, onForegroundMessage } from '../lib/firebase';
 import { usePullToRefresh } from '../lib/usePullToRefresh';
+import { DELIVERY_CANCELLED_EVENT } from '../lib/deliveryEvents';
 import type { EarningsSummary, Delivery } from '../lib/types';
 import { Card, CardContent } from '../components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';
@@ -74,6 +75,8 @@ export function DashboardPage() {
     requestNotificationPermission();
     requestPushToken().catch(() => {});
     const unsubFcm = onForegroundMessage((payload: any) => {
+      // Annulation : alerte gérée par DeliveryCancelledWatcher, rechargement via DELIVERY_CANCELLED_EVENT.
+      if (payload?.data?.type === 'delivery_cancelled') return;
       const title = payload?.notification?.title || 'MENUPRO Livraison';
       const body = payload?.notification?.body || '';
       show(body || title, 'success');
@@ -84,6 +87,16 @@ export function DashboardPage() {
     const poll = setInterval(() => loadPending(true), 15000);
     return () => { clearInterval(poll); unsubFcm(); };
   }, [loadPending, show]);
+
+  // Course annulée (push reçu app ouverte) : recharge la course active et les courses disponibles.
+  useEffect(() => {
+    const onCancelled = () => {
+      api.getActiveDelivery().then(setActiveDelivery).catch(() => {});
+      loadPending(true);
+    };
+    window.addEventListener(DELIVERY_CANCELLED_EVENT, onCancelled);
+    return () => window.removeEventListener(DELIVERY_CANCELLED_EVENT, onCancelled);
+  }, [loadPending]);
 
   useEffect(() => {
     if (!driver?.city || !driver?.is_available) return;

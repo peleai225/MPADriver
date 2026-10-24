@@ -29,8 +29,9 @@ const Ctx = createContext<NavCtx>({
 export const useNav = () => useContext(Ctx);
 
 /**
- * Écran demandé par un clic sur une notification push (lien `/?open=deliveries`, `/?open=active-delivery`).
- * Le paramètre est retiré de l'URL pour ne pas rouvrir le même écran au rechargement.
+ * Écran demandé par un clic sur une notification push (lien `/?open=deliveries`, `/?open=active-delivery`,
+ * `/?open=dashboard` pour une course annulée).
+ * Le paramètre est retiré de l'URL (quelle que soit sa valeur) pour ne pas rouvrir le même écran au rechargement.
  */
 function initialRoute(): Route {
   try {
@@ -42,6 +43,7 @@ function initialRoute(): Route {
     }
     if (open === 'deliveries') return { name: 'deliveries' };
     if (open === 'active-delivery') return { name: 'active-delivery' };
+    if (open === 'dashboard') return { name: 'dashboard' };
   } catch {}
   return { name: 'dashboard' };
 }

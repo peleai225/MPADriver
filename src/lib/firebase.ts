@@ -54,11 +54,26 @@ export async function requestPushToken(): Promise<string | null> {
   }
 }
 
-export function onForegroundMessage(cb: (payload: any) => void): () => void {
-  let unsub = () => {};
+// Le SDK modulaire ne conserve qu'UN seul gestionnaire onMessage (un 2e appel remplace le 1er,
+// et l'unsubscribe de l'un coupe l'autre). On enregistre donc un seul gestionnaire qui diffuse
+// le message à tous les abonnés (DashboardPage, DeliveryCancelledWatcher, …).
+type ForegroundListener = (payload: any) => void;
+const foregroundListeners = new Set<ForegroundListener>();
+let foregroundHooked = false;
+
+function hookForeground(): void {
+  if (foregroundHooked) return;
+  foregroundHooked = true;
   getMessagingInstance().then(messaging => {
-    if (!messaging) return;
-    unsub = onMessage(messaging, cb);
-  });
-  return () => unsub();
+    if (!messaging) { foregroundHooked = false; return; }
+    onMessage(messaging, payload => {
+      foregroundListeners.forEach(l => { try { l(payload); } catch {} });
+    });
+  }).catch(() => { foregroundHooked = false; });
+}
+
+export function onForegroundMessage(cb: ForegroundListener): () => void {
+  foregroundListeners.add(cb);
+  hookForeground();
+  return () => { foregroundListeners.delete(cb); };
 }

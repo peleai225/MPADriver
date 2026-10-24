@@ -16,6 +16,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { EditProfilePage } from './pages/EditProfilePage';
 import { BottomNav } from './components/BottomNav';
 import { DeliveryRequestAlert } from './components/DeliveryRequestAlert';
+import { DeliveryCancelledWatcher } from './components/DeliveryCancelledWatcher';
 
 function SplashScreen() {
   return (
@@ -97,6 +98,7 @@ function Router() {
       </ErrorBoundary>
       {showBottomNav && <BottomNav />}
       <DeliveryRequestAlert />
+      <DeliveryCancelledWatcher />
       <PwaUpdateBanner />
     </div>
   );

@@ -11,6 +11,7 @@ import { useAuth } from '../lib/auth';
 import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, playAlert, notify } from '../lib/alert';
 import { formatFCFA } from '../lib/format';
+import { setBadge, clearBadge } from '../lib/badge';
 import type { Delivery } from '../lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -46,7 +47,7 @@ export function DeliveryRequestAlert() {
         vibrate([0, 500, 300, 500, 300, 500]);
         playAlert();
         notify('Nouvelle course !', 'Ouvrez l\'application pour accepter.');
-        updateAppBadge(list.length);
+        setBadge(list.length);
       }
     } catch {}
   }, [driver?.is_available]);
@@ -92,7 +93,7 @@ export function DeliveryRequestAlert() {
       await api.acceptDelivery(delivery.id);
       show('Course acceptée !', 'success');
       dismiss();
-      updateAppBadge(0);
+      clearBadge();
       go({ name: 'active-delivery' });
     } catch (err: any) {
       show(err.message || 'Erreur', 'error');
@@ -263,13 +264,4 @@ export function DeliveryRequestAlert() {
       )}
     </AnimatePresence>
   );
-}
-
-function updateAppBadge(count: number): void {
-  try {
-    if ('setAppBadge' in navigator) {
-      if (count > 0) (navigator as any).setAppBadge(count);
-      else (navigator as any).clearAppBadge();
-    }
-  } catch {}
 }
