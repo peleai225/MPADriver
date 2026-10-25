@@ -71,6 +71,8 @@ export interface Delivery {
   restaurant?: DeliveryRestaurant;
   order_ref?: string;
   earning?: { net_amount: number; gross_amount: number; status: string | null };
+  customer?: { address?: string | null; phone?: string | null };
+  created_at?: string;
   cancelled_at?: string | null;
   cancellation_reason?: string | null;
   cancelled_by?: string | null;

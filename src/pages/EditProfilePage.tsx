@@ -67,7 +67,7 @@ export function EditProfilePage() {
     <div className="min-h-screen flex flex-col bg-background">
 
       {/* HEADER */}
-      <div className="flex items-center gap-3 px-5 pb-4 safe-top pt-4 bg-foreground">
+      <div className="flex items-center gap-3 px-5 pb-4 pt-safe bg-foreground">
         <Button
           variant="ghost"
           size="icon"
@@ -78,7 +78,7 @@ export function EditProfilePage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-white font-extrabold text-lg">Modifier le profil</h1>
-          <p className="text-white/40 text-xs">Mettez vos informations à jour</p>
+          <p className="text-white/70 text-xs">Mettez vos informations à jour</p>
         </div>
       </div>
 

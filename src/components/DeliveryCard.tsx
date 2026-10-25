@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { MapPin, Clock, ChevronRight, ClipboardList, Package } from 'lucide-react';
+import { MapPin, ChevronRight, ClipboardList, Package, CheckCircle2, Banknote } from 'lucide-react';
 import type { Delivery } from '../lib/types';
 import { formatFCFA } from '../lib/format';
 import { Button } from './ui/button';
@@ -13,130 +12,102 @@ interface Props {
   loading?: boolean;
 }
 
-const EXPIRE_SECONDS = 180;
-
-function useCountdown(seconds: number) {
-  const [remaining, setRemaining] = useState(seconds);
-  useEffect(() => {
-    if (remaining <= 0) return;
-    const t = setInterval(() => setRemaining(s => Math.max(0, s - 1)), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const m = String(Math.floor(remaining / 60)).padStart(2, '0');
-  const s = String(remaining % 60).padStart(2, '0');
-  return { label: `${m}:${s}`, pct: remaining / seconds, expired: remaining === 0 };
-}
-
+/**
+ * Course disponible. Depuis la mise à jour serveur, une course n'apparaît ici qu'une fois la commande
+ * ACCEPTÉE par le restaurant : on le dit clairement au livreur.
+ * (L'ancien compte à rebours de 3 min était purement local : il bloquait « Accepter » alors que la
+ * course restait disponible côté serveur. Retiré.)
+ */
 export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) {
   const order = delivery.order;
-  const { label: timer, expired } = useCountdown(EXPIRE_SECONDS);
-
   if (!order) return null;
 
   const restaurant = order.restaurant;
+  const isCash = order.payment_method === 'cash_on_delivery';
 
   return (
-    <Card className="overflow-hidden animate-fade-up">
+    <Card className="overflow-hidden animate-fade-up border-2">
 
-      {/* ── TAG NOUVELLE COURSE ── */}
-      <div className="px-4 pt-3 pb-2">
+      <div className="px-4 pt-3 pb-2 flex items-center gap-2 flex-wrap">
         <Badge variant="default" dot pulse>NOUVELLE COURSE</Badge>
+        <span className="inline-flex items-center gap-1 text-xs font-bold text-success-700">
+          <CheckCircle2 size={14} /> Acceptée par le restaurant
+        </span>
       </div>
 
-      {/* ── BODY ── */}
       <div className="px-4 pb-3 flex gap-3">
-        {/* Logo restaurant */}
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 bg-primary/8 overflow-hidden">
           {restaurant?.logo_url
             ? <img src={restaurant.logo_url} alt="" className="w-full h-full object-cover" />
             : <Package size={20} className="text-muted-foreground" />}
         </div>
 
-        {/* Infos */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <p className="font-extrabold text-base leading-tight truncate text-foreground">
-              {restaurant?.address || restaurant?.name || 'Restaurant'}
-            </p>
-            <ChevronRight size={14} className="text-primary shrink-0" />
-            <p className="font-extrabold text-base leading-tight truncate text-foreground">
+          <p className="font-extrabold text-base leading-tight truncate text-foreground">{restaurant?.name || 'Restaurant'}</p>
+          {restaurant?.address && <p className="text-sm text-muted-foreground truncate">{restaurant.address}</p>}
+
+          <div className="flex items-start gap-1.5 mt-1.5">
+            <MapPin size={15} className="text-success-700 shrink-0 mt-0.5" />
+            <p className="text-sm font-semibold text-foreground line-clamp-2">
               {order.delivery_address?.split(',')[0] || 'Client'}
             </p>
           </div>
-          <p className="text-xs mb-1 text-muted-foreground">Restaurant / vendeur</p>
-          <p className="text-sm font-bold text-foreground">{restaurant?.name || '—'}</p>
 
           <div className="flex items-center gap-1.5 mt-1.5">
-            <ClipboardList size={13} className="text-muted-foreground" />
+            <ClipboardList size={14} className="text-muted-foreground" />
             <span className="text-xs font-semibold text-foreground">
-              Commande <span className="text-primary">#{order.reference}</span>
+              #{order.reference} · {order.items?.length ?? 0} article{(order.items?.length ?? 0) > 1 ? 's' : ''} · {formatFCFA(order.total)}
             </span>
           </div>
-          <p className="text-xs mt-0.5 text-muted-foreground">
-            {order.items?.length ?? 0} article{(order.items?.length ?? 0) > 1 ? 's' : ''} · {formatFCFA(order.total)}
-          </p>
-        </div>
-
-        {/* Distance + Gain */}
-        <div className="flex flex-col items-end gap-2 shrink-0">
-          {delivery.distance_km != null && (
-            <div className="flex flex-col items-center px-2.5 py-2 rounded-2xl bg-muted">
-              <MapPin size={14} className="text-primary" />
-              <p className="font-extrabold text-sm leading-tight mt-0.5 text-foreground">
-                {Number(delivery.distance_km).toFixed(1)} km
-              </p>
-              <p className="text-[10px] text-muted-foreground">Distance</p>
+          {isCash && (
+            <div className="flex items-center gap-1.5 mt-1 text-warning-700">
+              <Banknote size={14} />
+              <span className="text-xs font-bold">Cash à collecter : {formatFCFA(order.total)}</span>
             </div>
           )}
+        </div>
+
+        <div className="flex flex-col items-end gap-2 shrink-0">
           {delivery.driver_earning_estimate != null && (
-            <div className="flex flex-col items-center px-2.5 py-2 rounded-2xl bg-muted">
-              <p className="text-[10px] text-muted-foreground">Gain</p>
-              <p className="font-extrabold text-xl leading-tight text-primary">
+            <div className="flex flex-col items-center px-2.5 py-2 rounded-2xl bg-primary/10">
+              <p className="text-[11px] font-semibold text-muted-foreground">Gain</p>
+              <p className="font-extrabold text-xl leading-tight text-primary tabular">
                 {formatFCFA(delivery.driver_earning_estimate)}
               </p>
+            </div>
+          )}
+          {delivery.distance_km != null && (
+            <div className="flex flex-col items-center px-2.5 py-1.5 rounded-2xl bg-muted">
+              <p className="font-extrabold text-sm leading-tight text-foreground tabular">
+                {Number(delivery.distance_km).toFixed(1)} km
+              </p>
+              <p className="text-[11px] text-muted-foreground">du resto</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── FOOTER : timer + boutons ── */}
-      <div className="px-3 pb-3 space-y-2">
-        {/* Timer */}
-        <div className="flex items-center gap-1.5 px-3 py-2 rounded-full w-full justify-center bg-muted">
-          <Clock size={13} className="text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">Expire dans </span>
-          <span className={`text-xs font-extrabold ${expired ? 'text-destructive' : 'text-primary'}`}>
-            {timer}
-          </span>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="pill"
-            className="flex-1"
-            onClick={onDecline}
-            disabled={loading || expired}
-          >
-            Refuser
-          </Button>
-          <Button
-            size="pill"
-            className="flex-[2]"
-            onClick={onAccept}
-            disabled={loading || expired}
-            style={expired ? { background: undefined } : undefined}
-          >
-            {loading ? (
-              <span className="w-4 h-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
-            ) : expired ? (
-              'Expirée'
-            ) : (
-              <>Accepter <ChevronRight size={15} /></>
-            )}
-          </Button>
-        </div>
+      {/* Actions : cibles ≥ 48 px */}
+      <div className="px-3 pb-3 flex gap-2">
+        <Button
+          variant="outline"
+          className="flex-1 h-12 rounded-full text-base"
+          onClick={onDecline}
+          disabled={loading}
+        >
+          Ignorer
+        </Button>
+        <Button
+          className="flex-[2] h-12 rounded-full text-base font-extrabold"
+          onClick={onAccept}
+          disabled={loading}
+        >
+          {loading ? (
+            <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+          ) : (
+            <>Accepter <ChevronRight size={18} /></>
+          )}
+        </Button>
       </div>
     </Card>
   );

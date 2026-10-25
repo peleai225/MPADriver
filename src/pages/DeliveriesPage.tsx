@@ -2,8 +2,10 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   RefreshCw, MapPin, Clock, ChevronRight, Package, Truck,
-  CheckCircle2, Search, Inbox,
+  CheckCircle2, Search, Inbox, WifiOff, Power,
 } from 'lucide-react';
+import { HistoryDetailSheet } from '../components/HistoryDetailSheet';
+import { useOnline, isNetworkError } from '../lib/network';
 import { api } from '../lib/api';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
@@ -34,13 +36,13 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.3 } },
 };
 
-function CompletedCard({ delivery }: { delivery: Delivery }) {
+function CompletedCard({ delivery, onOpen }: { delivery: Delivery; onOpen: () => void }) {
   // L'endpoint history retourne les champs à plat (restaurant, order_ref, earning)
   // L'endpoint active retourne order.restaurant, order.reference, driver_earning_estimate
   const restaurant = delivery.restaurant ?? delivery.order?.restaurant;
   const reference = delivery.order_ref ?? delivery.order?.reference;
   const earning = delivery.earning?.net_amount ?? delivery.driver_earning_estimate;
-  const address = delivery.order?.delivery_address;
+  const address = delivery.customer?.address ?? delivery.order?.delivery_address;
   const statusLabel = DELIVERY_STATUS_LABELS[delivery.status] ?? delivery.status;
   const isDone = delivery.status === 'delivered';
   const isCancelled = delivery.status === 'cancelled';
@@ -48,6 +50,7 @@ function CompletedCard({ delivery }: { delivery: Delivery }) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
+        <button type="button" onClick={onOpen} className="w-full text-left tap block">
         <div className="px-4 py-3 flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-primary/8 overflow-hidden">
             {restaurant?.logo_url
@@ -72,7 +75,7 @@ function CompletedCard({ delivery }: { delivery: Delivery }) {
             )}
           </div>
         </div>
-        <div className="px-4 pb-3 flex items-center gap-4 border-t border-border/60">
+        <div className="px-4 py-2.5 flex items-center gap-4 border-t border-border/60">
           <span className="text-xs text-muted-foreground tabular">
             {reference ? `#${reference}` : '—'}
           </span>
@@ -85,7 +88,9 @@ function CompletedCard({ delivery }: { delivery: Delivery }) {
               <span className="text-xs text-muted-foreground tabular">{Number(delivery.distance_km).toFixed(1)} km</span>
             </div>
           )}
+          <ChevronRight size={16} className="text-muted-foreground ml-auto shrink-0" />
         </div>
+        </button>
       </CardContent>
     </Card>
   );
@@ -100,13 +105,13 @@ function ActiveDeliveryBanner({ delivery, onGo }: { delivery: Delivery; onGo: ()
             <Truck size={22} className="text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white/60 text-[10px] font-semibold uppercase tracking-wider">Course en cours</p>
+            <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wider">Course en cours</p>
             <p className="text-white font-bold text-sm leading-tight mt-0.5 truncate">
               {delivery.order?.restaurant?.name ?? 'Course'}
             </p>
             <div className="flex items-center gap-1 mt-1">
-              <Clock size={11} className="text-white/50" />
-              <p className="text-white/50 text-xs">{DELIVERY_STATUS_LABELS[delivery.status] ?? delivery.status}</p>
+              <Clock size={11} className="text-white/75" />
+              <p className="text-white/75 text-xs">{DELIVERY_STATUS_LABELS[delivery.status] ?? delivery.status}</p>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5">
@@ -132,6 +137,12 @@ export function DeliveriesPage() {
   const [history, setHistory] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyLastPage, setHistoryLastPage] = useState(1);
+  const [historyMoreLoading, setHistoryMoreLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const [detail, setDetail] = useState<Delivery | null>(null);
+  const online = useOnline();
   const [actionId, setActionId] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>('available');
 
@@ -140,8 +151,9 @@ export function DeliveriesPage() {
     try {
       const data = await api.getPendingDeliveries();
       setPending(data);
-    } catch {
-      if (!silent) show('Impossible de charger les courses.', 'error');
+    } catch (e) {
+      // Hors ligne : le bandeau réseau et l'état vide le disent déjà, pas de toast en plus.
+      if (!silent && !isNetworkError(e)) show('Impossible de charger les courses.', 'error');
     } finally {
       if (!silent) setLoading(false);
     }
@@ -157,14 +169,33 @@ export function DeliveriesPage() {
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
-      const r = await api.getDeliveryHistory();
+      const r = await api.getDeliveryHistory(1);
       setHistory(r.data);
+      setHistoryPage(1);
+      setHistoryLastPage(r.meta?.last_page ?? 1);
+      setHistoryLoaded(true);
     } catch {
       show('Impossible de charger l\'historique.', 'error');
     } finally {
       setHistoryLoading(false);
     }
   }, [show]);
+
+  // Pagination de l'historique (20 courses par page côté API).
+  const loadMoreHistory = async () => {
+    const next = historyPage + 1;
+    setHistoryMoreLoading(true);
+    try {
+      const r = await api.getDeliveryHistory(next);
+      setHistory(h => [...h, ...r.data.filter(d => !h.some(x => x.id === d.id))]);
+      setHistoryPage(next);
+      setHistoryLastPage(r.meta?.last_page ?? next);
+    } catch (err: any) {
+      show(err.message || 'Impossible de charger la suite.', 'error');
+    } finally {
+      setHistoryMoreLoading(false);
+    }
+  };
 
   const handleRefresh = useCallback(async () => {
     await Promise.all([loadPending(), loadActive()]);
@@ -190,8 +221,8 @@ export function DeliveriesPage() {
   }, [loadPending, loadActive]);
 
   useEffect(() => {
-    if (tab === 'done' && history.length === 0) loadHistory();
-  }, [tab, history.length, loadHistory]);
+    if (tab === 'done' && !historyLoaded) loadHistory();
+  }, [tab, historyLoaded, loadHistory]);
 
   useEffect(() => {
     if (!driver?.city) return;
@@ -212,6 +243,11 @@ export function DeliveriesPage() {
       go({ name: 'active-delivery' });
     } catch (err: any) {
       show(err.message || 'Erreur.', 'error');
+      // 409 : prise par un autre livreur. On la retire et on rafraîchit la liste.
+      if (err?.status === 409) {
+        setPending(d => d.filter(x => x.id !== id));
+        loadPending(true);
+      }
     } finally { setActionId(null); }
   };
 
@@ -220,9 +256,10 @@ export function DeliveriesPage() {
     try {
       await api.declineDelivery(id);
       setPending(d => d.filter(x => x.id !== id));
-      show('Course refusée.', 'info');
+      show('Course ignorée.', 'info');
     } catch (err: any) {
-      show(err.message || 'Erreur.', 'error');
+      if (isNetworkError(err)) setPending(d => d.filter(x => x.id !== id));
+      else show(err.message || 'Erreur.', 'error');
     } finally { setActionId(null); }
   };
 
@@ -258,7 +295,7 @@ export function DeliveriesPage() {
             </TabsTrigger>
             <TabsTrigger value="done" className="gap-1.5">
               <CheckCircle2 size={15} />
-              <span>Termin.</span>
+              <span>Terminées</span>
             </TabsTrigger>
           </TabsList>
 
@@ -292,22 +329,52 @@ export function DeliveriesPage() {
                 <motion.div variants={fadeUp}>
                   <Card>
                     <CardContent className="py-10 flex flex-col items-center text-center">
-                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-muted">
-                        <Search size={28} className="text-muted-foreground" />
-                      </div>
-                      <p className="font-bold text-base text-foreground">Aucune course disponible</p>
-                      <p className="text-sm mt-1 text-muted-foreground max-w-[240px]">
-                        Nous recherchons des courses près de vous. Restez en ligne.
-                      </p>
-                      <div className="flex items-center gap-2 mt-5">
-                        <Badge variant={driver?.is_available ? 'success' : 'muted'} dot className="py-1.5 px-3 rounded-full">
-                          {driver?.is_available ? 'En ligne' : 'Hors ligne'}
-                        </Badge>
-                        <Button variant="outline" size="sm" onClick={() => loadPending()} disabled={loading} className="rounded-full">
-                          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-                          Actualiser
-                        </Button>
-                      </div>
+                      {!online ? (
+                        <>
+                          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-warning-100">
+                            <WifiOff size={28} className="text-warning-700" />
+                          </div>
+                          <p className="font-bold text-base text-foreground">Pas de connexion</p>
+                          <p className="text-sm mt-1 text-muted-foreground max-w-[260px]">
+                            Impossible de voir les nouvelles courses sans réseau. La liste se mettra à jour au retour du réseau.
+                          </p>
+                        </>
+                      ) : !driver?.is_available ? (
+                        <>
+                          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-muted">
+                            <Power size={28} className="text-muted-foreground" />
+                          </div>
+                          <p className="font-bold text-base text-foreground">Vous êtes hors ligne</p>
+                          <p className="text-sm mt-1 text-muted-foreground max-w-[260px]">
+                            Passez en ligne depuis l'accueil pour voir et recevoir les courses.
+                          </p>
+                          <Button className="mt-5 h-12 rounded-full" onClick={() => go({ name: 'dashboard' })}>
+                            Passer en ligne
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-muted">
+                            <Search size={28} className="text-muted-foreground" />
+                          </div>
+                          <p className="font-bold text-base text-foreground">Aucune course pour le moment</p>
+                          <p className="text-sm mt-1 text-muted-foreground max-w-[260px]">
+                            Une course apparaît dès qu'un restaurant de {driver?.city ?? 'votre ville'} accepte une commande.
+                            Restez en ligne : vous serez alerté.
+                          </p>
+                        </>
+                      )}
+                      {online && (
+                        <div className="flex items-center gap-2 mt-5">
+                          {driver?.is_available && (
+                            <Badge variant="success" dot className="py-1.5 px-3 rounded-full">En ligne</Badge>
+                          )}
+                          <Button variant="outline" onClick={() => loadPending()} disabled={loading} className="h-12 rounded-full">
+                            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                            Actualiser
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -358,15 +425,27 @@ export function DeliveriesPage() {
                 <>
                   <motion.div variants={fadeUp} className="flex items-center justify-between">
                     <p className="font-bold text-sm text-foreground">Historique</p>
-                    <Button variant="ghost" size="icon" onClick={loadHistory} disabled={historyLoading} className="h-8 w-8">
-                      <RefreshCw size={14} className={historyLoading ? 'animate-spin' : ''} />
+                    <Button variant="ghost" size="icon" aria-label="Actualiser" onClick={loadHistory} disabled={historyLoading} className="h-12 w-12">
+                      <RefreshCw size={18} className={historyLoading ? 'animate-spin' : ''} />
                     </Button>
                   </motion.div>
                   {history.map(d => (
                     <motion.div key={d.id} variants={fadeUp}>
-                      <CompletedCard delivery={d} />
+                      <CompletedCard delivery={d} onOpen={() => setDetail(d)} />
                     </motion.div>
                   ))}
+                  {historyPage < historyLastPage && (
+                    <Button
+                      variant="outline"
+                      onClick={loadMoreHistory}
+                      disabled={historyMoreLoading}
+                      className="w-full h-12 rounded-full"
+                    >
+                      {historyMoreLoading
+                        ? <span className="w-5 h-5 border-2 border-foreground/30 border-t-foreground rounded-full animate-spin" />
+                        : 'Voir plus de courses'}
+                    </Button>
+                  )}
                 </>
               ) : (
                 <motion.div variants={fadeUp}>
@@ -385,6 +464,8 @@ export function DeliveriesPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <HistoryDetailSheet delivery={detail} onClose={() => setDetail(null)} />
     </div>
   );
 }

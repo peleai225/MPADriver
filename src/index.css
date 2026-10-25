@@ -111,17 +111,19 @@
   --card-foreground:       20 10% 10%;
   --popover:               0 0% 100%;
   --popover-foreground:    20 10% 10%;
-  --primary:               24.6 95% 53.1%;
+  /* Orange de marque légèrement assombri (F97316 → EA580C) : texte blanc des boutons plus lisible au soleil. */
+  --primary:               20.5 90% 48.2%;
   --primary-foreground:    0 0% 100%;
   --secondary:             30 15% 95%;
   --secondary-foreground:  20 10% 10%;
   --muted:                 30 10% 93%;
-  --muted-foreground:      20 5% 46%;
+  /* Assombri (46 % → 34 %) : texte secondaire lisible en plein soleil (contraste ≈ 7:1 sur blanc). */
+  --muted-foreground:      20 6% 34%;
   --accent:                30 20% 92%;
   --accent-foreground:     20 10% 10%;
   --destructive:           0 84% 60%;
   --destructive-foreground:0 0% 100%;
-  --border:                30 12% 90%;
+  --border:                30 10% 84%;
   --input:                 30 12% 90%;
   --ring:                  24.6 95% 53.1%;
   --radius:                0.875rem;
@@ -144,7 +146,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Utilities ── */
+/* ── Utilities ──
+   Attention : ces classes sont hors @layer, elles REMPLACENT un padding Tailwind (pb-5, pt-4…) posé sur le même
+   élément (ex. « pb-5 safe-bottom » = 0 px sur Android). Pour cumuler marge et zone sûre, utiliser
+   pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] ou pt-safe / pb-safe. */
 .safe-top    { padding-top:    var(--safe-top); }
 .safe-bottom { padding-bottom: var(--safe-bottom); }
 .pt-safe     { padding-top:    calc(var(--safe-top) + 1rem); }

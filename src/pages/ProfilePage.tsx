@@ -127,7 +127,7 @@ export function ProfilePage() {
                 <div>
                   <h2 className="text-white font-extrabold text-xl leading-tight">{driver.name}</h2>
                   <p className="text-white/60 text-xs mt-0.5">{driver.phone}</p>
-                  {driver.email && <p className="text-white/50 text-xs">{driver.email}</p>}
+                  {driver.email && <p className="text-white/75 text-xs">{driver.email}</p>}
                   <div className="mt-2">
                     <Badge variant={STATUS_VARIANT[driver.verification_status]} dot className="bg-white/20 text-white border-0">
                       {STATUS_LABELS[driver.verification_status]}

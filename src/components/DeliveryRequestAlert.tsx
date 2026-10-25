@@ -132,15 +132,15 @@ export function DeliveryRequestAlert() {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="w-full bg-card rounded-t-3xl safe-bottom max-h-[90vh] overflow-y-auto"
+            className="w-full bg-card rounded-t-3xl pb-[env(safe-area-inset-bottom,0px)] max-h-[90vh] overflow-y-auto"
           >
             {/* Header */}
             <div className="px-5 pt-5 pb-3 flex items-center justify-between">
               <Badge variant="default" dot pulse className="text-sm">
                 NOUVELLE COURSE
               </Badge>
-              <button onClick={() => handleDecline(false)} className="w-8 h-8 rounded-full flex items-center justify-center bg-muted tap">
-                <X size={16} className="text-muted-foreground" />
+              <button onClick={() => handleDecline(false)} aria-label="Fermer" className="w-12 h-12 rounded-full flex items-center justify-center bg-muted tap">
+                <X size={20} className="text-foreground" />
               </button>
             </div>
 

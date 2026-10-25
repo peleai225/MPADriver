@@ -238,7 +238,7 @@ export function RegisterPage() {
       </div>
 
       {/* CTA */}
-      <div className="fixed bottom-0 inset-x-0 px-6 py-4 safe-bottom bg-card border-t border-border">
+      <div className="fixed bottom-0 inset-x-0 px-6 pt-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] bg-card border-t border-border">
         <Button
           onClick={step < 2 ? nextStep : handleSubmit}
           disabled={loading}

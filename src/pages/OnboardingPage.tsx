@@ -78,7 +78,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
             <h1 className="text-white font-extrabold text-2xl leading-tight mb-3 max-w-xs">
               {slide.title}
             </h1>
-            <p className="text-white/50 text-sm leading-relaxed max-w-xs">
+            <p className="text-white/75 text-sm leading-relaxed max-w-xs">
               {slide.desc}
             </p>
           </motion.div>
@@ -86,7 +86,7 @@ export function OnboardingPage({ onComplete }: OnboardingPageProps) {
       </div>
 
       {/* Bottom card */}
-      <div className="rounded-t-[2.5rem] px-6 pt-6 pb-10 bg-card shadow-card safe-bottom">
+      <div className="rounded-t-[2.5rem] px-6 pt-6 pb-[calc(env(safe-area-inset-bottom,0px)+2.5rem)] bg-card shadow-card">
 
         {/* Dots */}
         <div className="flex items-center justify-center gap-2 mb-6">

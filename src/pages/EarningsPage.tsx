@@ -100,7 +100,7 @@ export function EarningsPage() {
 
             <p className="text-white/70 text-xs mb-1 relative">Solde disponible</p>
             <p className="text-white font-extrabold text-4xl tabular relative">{formatFCFA(summary?.balance_available ?? 0)}</p>
-            <p className="text-white/50 text-xs mt-1 tabular relative">{summary?.deliveries_total ?? 0} livraison{(summary?.deliveries_total ?? 0) !== 1 ? 's' : ''} au total</p>
+            <p className="text-white/75 text-xs mt-1 tabular relative">{summary?.deliveries_total ?? 0} livraison{(summary?.deliveries_total ?? 0) !== 1 ? 's' : ''} au total</p>
 
             <Button
               variant="secondary"

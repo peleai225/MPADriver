@@ -35,7 +35,7 @@ const SheetContent = React.forwardRef<
       className={cn(
         'fixed z-50 bg-card shadow-xl focus:outline-none',
         side === 'bottom' && [
-          'bottom-0 inset-x-0 rounded-t-3xl pb-[env(safe-area-inset-bottom,1rem)]',
+          'bottom-0 inset-x-0 rounded-t-3xl pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]',
           'data-[state=open]:animate-slide-up data-[state=closed]:animate-slide-down',
         ],
         side === 'top' && 'top-0 inset-x-0 rounded-b-3xl',
