@@ -64,8 +64,8 @@ messaging.onBackgroundMessage(async (payload) => {
     try {
       await self.registration.showNotification(data.title || (isCancelled ? 'Course annulée' : 'MENUPRO Livraison'), {
         body: data.body || (isCancelled ? 'Une course a été annulée.' : 'Nouvelle notification'),
-        icon: '/logo.png',
-        badge: '/logo.png',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/badge-96.png',
         tag: data.delivery_id ? `delivery-${data.delivery_id}` : 'menupro-delivery',
         renotify: true,
         requireInteraction: true,

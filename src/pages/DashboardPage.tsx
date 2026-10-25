@@ -157,7 +157,7 @@ export function DashboardPage() {
           {/* Top bar: logo + city + rating + avatar */}
           <div className="flex items-center justify-between mb-4">
             <div className="bg-white rounded-2xl p-1.5 shadow-soft">
-              <img src="/logo.png" alt="MenuPro" className="w-9 h-9 object-contain" />
+              <img src="/icons/icon-192.png" alt="MenuPro" className="w-9 h-9 object-contain" />
             </div>
 
             <div className="flex items-center gap-2">
@@ -185,7 +185,7 @@ export function DashboardPage() {
             <h1 className="text-[1.6rem] font-extrabold tracking-tight text-white leading-tight">
               {getGreeting()}{driver?.name ? `, ${driver.name.split(' ')[0]}` : ''}
             </h1>
-            <p className="text-white/50 text-sm mt-0.5">Prêt à livrer aujourd'hui ?</p>
+            <p className="text-white/75 text-sm mt-0.5">Prêt à livrer aujourd'hui ?</p>
           </div>
 
           {/* Online toggle */}
@@ -201,13 +201,13 @@ export function DashboardPage() {
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
               isOnline ? 'bg-success-500' : 'bg-white/15'
             }`}>
-              <Power size={20} strokeWidth={2.5} className={isOnline ? 'text-white' : 'text-white/50'} />
+              <Power size={20} strokeWidth={2.5} className={isOnline ? 'text-white' : 'text-white/75'} />
             </div>
             <div className="flex-1 text-left">
               <p className="font-bold text-sm text-white">
                 {togglingOnline ? 'Mise à jour...' : isOnline ? 'En ligne' : 'Hors ligne'}
               </p>
-              <p className="text-[11px] text-white/40">
+              <p className="text-[11px] text-white/70">
                 {isOnline ? 'Vous recevez des courses' : 'Activez pour recevoir des courses'}
               </p>
             </div>
@@ -261,7 +261,7 @@ export function DashboardPage() {
                       <p className="text-white font-bold text-sm">Course en cours</p>
                       <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
                     </div>
-                    <p className="text-white/50 text-xs truncate mt-0.5">{activeDelivery.order?.restaurant?.name ?? 'Course'}</p>
+                    <p className="text-white/75 text-xs truncate mt-0.5">{activeDelivery.order?.restaurant?.name ?? 'Course'}</p>
                   </div>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
                     <ArrowUpRight size={16} className="text-white" />

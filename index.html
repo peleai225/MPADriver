@@ -1,23 +1,37 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/logo.png" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/logo.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1" />
-    <meta name="theme-color" content="#1C1C1C" />
-    <meta name="description" content="MENUPRO Livraison — Gérez vos courses et vos gains." />
-    <meta name="apple-mobile-web-app-title" content="MENUPRO Livraison" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="mobile-web-app-capable" content="yes" />
     <title>MENUPRO Livraison</title>
-    <!-- Service worker registered by vite-plugin-pwa -->
+    <meta name="description" content="Application livreur MENUPRO : recevez des courses, livrez et suivez vos gains." />
+
+    <!-- Couleur de la barre d'état (Android) et du sélecteur d'apps : identique aux en-têtes sombres -->
+    <meta name="theme-color" content="#1C1C1C" />
+    <meta name="color-scheme" content="light" />
+
+    <!-- Icônes -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+
+    <!-- PWA installée (Android / iOS) -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="MENUPRO Livreur" />
+    <!-- « black » : barre d'état sombre, contenu en dessous. « black-translucent » rendait l'heure et la
+         batterie illisibles (texte blanc) sur les écrans à fond clair (Courses, Gains, Profil). -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Écran de démarrage iOS : couleur de fond identique au manifest (pas d'image par appareil). -->
+    <style>html, body { background: #1C1C1C; }</style>
+
+    <link rel="preconnect" href="https://www.menupro.ci" crossorigin />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>Activez JavaScript pour utiliser MENUPRO Livraison.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

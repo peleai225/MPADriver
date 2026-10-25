@@ -11,7 +11,11 @@ import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
 import { formatFCFA, DELIVERY_STATUS_LABELS, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '../lib/format';
-import { startTracking, stopTracking, openInMaps } from '../lib/geo';
+import { openInMaps } from '../lib/geo';
+import { sendDeliveryStatus, sendCashCollected, OUTBOX_SYNCED_EVENT, CASH_SYNCED_EVENT } from '../lib/outbox';
+import { setCachedActiveDelivery, getCachedActiveDelivery } from '../lib/activeDelivery';
+import { GeoNotice } from '../components/GeoNotice';
+import { compressImage } from '../lib/imageUtils';
 import { listenDeliveryStatus, listenOrderStatus } from '../lib/echo';
 import { vibrate, notify, playAlert } from '../lib/alert';
 import type { Delivery, IssueType, OrderStatus } from '../lib/types';
@@ -50,6 +54,8 @@ export function ActiveDeliveryPage() {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [phase, setPhase] = useState<FlowPhase>('main');
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
 
   // Pickup checklist
   const [pickupChecks, setPickupChecks] = useState([false, false, false]);
@@ -65,6 +71,8 @@ export function ActiveDeliveryPage() {
   const [showCashModal, setShowCashModal] = useState(false);
   const [cashAmount, setCashAmount] = useState('');
   const [cashDebt, setCashDebt] = useState<{ amount_owed: number; restaurant: string } | null>(null);
+  // Livraison / collecte enregistrées sans réseau : envoyées automatiquement au retour du réseau.
+  const [savedOffline, setSavedOffline] = useState(false);
 
   // Order status from restaurant
   const [orderStatus, setOrderStatus] = useState<OrderStatus | null>(null);
@@ -74,16 +82,31 @@ export function ActiveDeliveryPage() {
   const [issueLoading, setIssueLoading] = useState(false);
 
   useEffect(() => {
+    // Affichage immédiat de la course gardée sur le téléphone, puis mise à jour depuis le serveur.
+    const cached = getCachedActiveDelivery();
+    if (cached) { setDelivery(cached); setLoading(false); }
     api.getActiveDelivery().then(d => { setDelivery(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
 
+  // Le suivi GPS et l'écran allumé sont gérés pour toute l'app par CourseKeeper.
+
+  // Actions envoyées après une coupure réseau : on se recale sur le serveur (sauf écran « Bravo »).
   useEffect(() => {
-    if (!delivery) return;
-    startTracking(async (pos) => {
-      try { await api.updateLocation(pos.lat, pos.lng, pos.accuracy, pos.speed, pos.heading); } catch { }
-    });
-    return () => stopTracking();
-  }, [delivery?.id]);
+    const onSynced = () => {
+      if (phaseRef.current === 'done') return;
+      api.getActiveDelivery().then(d => { if (d) setDelivery(d); }).catch(() => {});
+    };
+    const onCash = (e: Event) => {
+      const r = (e as CustomEvent<{ amount_owed: number; restaurant: string }>).detail;
+      if (r) setCashDebt({ amount_owed: r.amount_owed, restaurant: r.restaurant });
+    };
+    window.addEventListener(OUTBOX_SYNCED_EVENT, onSynced);
+    window.addEventListener(CASH_SYNCED_EVENT, onCash);
+    return () => {
+      window.removeEventListener(OUTBOX_SYNCED_EVENT, onSynced);
+      window.removeEventListener(CASH_SYNCED_EVENT, onCash);
+    };
+  }, []);
 
   useEffect(() => {
     if (!driver?.id) return;
@@ -95,7 +118,7 @@ export function ActiveDeliveryPage() {
         vibrate([500, 200, 500]);
         notify('Course annulée', 'La commande a été annulée.', () => go({ name: 'deliveries' }));
         show('Course annulée.', 'error');
-        setDelivery(null); stopTracking(); go({ name: 'deliveries' });
+        setDelivery(null); setCachedActiveDelivery(null); go({ name: 'deliveries' });
         return;
       }
       api.getActiveDelivery().then(d => { if (active) setDelivery(d); }).catch(() => {});
@@ -130,6 +153,21 @@ export function ActiveDeliveryPage() {
     return () => { active = false; unsub?.(); };
   }, [delivery?.tracking_token, delivery?.order_status, show]);
 
+  /**
+   * Passe à l'étape suivante. Sans réseau, l'étape est enregistrée sur le téléphone et l'écran avance
+   * quand même : elle sera envoyée automatiquement dès le retour du réseau (voir lib/outbox.ts).
+   */
+  const applyStep = async (status: 'heading_to_restaurant' | 'picked_up' | 'delivering' | 'delivered') => {
+    if (!delivery) return;
+    const r = await sendDeliveryStatus(delivery.id, status);
+    if (r.data) setDelivery(r.data);
+    else setDelivery(d => (d ? { ...d, status } : d));
+    if (r.queued) {
+      setSavedOffline(true);
+      show('Pas de réseau : étape enregistrée, envoi automatique au retour du réseau.', 'info');
+    }
+  };
+
   // #5 — Navigation Google Maps on status transitions
   const advance = async () => {
     if (!delivery || !delivery.order) return;
@@ -137,15 +175,13 @@ export function ActiveDeliveryPage() {
     setUpdating(true);
     try {
       if (delivery.status === 'assigned') {
-        const updated = await api.updateDeliveryStatus(delivery.id, 'heading_to_restaurant');
-        setDelivery(updated);
+        await applyStep('heading_to_restaurant');
         openInMaps(order.restaurant.latitude, order.restaurant.longitude, order.restaurant.name);
       } else if (delivery.status === 'heading_to_restaurant') {
         // #2 — Show pickup checklist instead of directly advancing
         setPhase('pickup');
       } else if (delivery.status === 'picked_up') {
-        const updated = await api.updateDeliveryStatus(delivery.id, 'delivering');
-        setDelivery(updated);
+        await applyStep('delivering');
         openInMaps(order.delivery_latitude, order.delivery_longitude, order.delivery_address);
       } else if (delivery.status === 'delivering') {
         // #3 — Show verification screen instead of directly marking delivered
@@ -161,8 +197,7 @@ export function ActiveDeliveryPage() {
     if (!delivery) return;
     setUpdating(true);
     try {
-      const updated = await api.updateDeliveryStatus(delivery.id, 'picked_up');
-      setDelivery(updated);
+      await applyStep('picked_up');
       setPhase('main');
       setPickupChecks([false, false, false]);
       show('Commande récupérée !', 'success');
@@ -195,11 +230,13 @@ export function ActiveDeliveryPage() {
     setProofPhoto(file);
     setUpdating(true);
     try {
-      await api.uploadDeliveryProof(delivery.id, file);
+      // Photo d'appareil d'entrée de gamme : souvent 3 à 6 Mo. Réduite (~200 Ko) pour passer en 3G.
+      const small = await compressImage(file, 1280, 1280, 0.75);
+      await api.uploadDeliveryProof(delivery.id, small);
       setProofUploaded(true);
       show('Photo envoyée !', 'success');
     } catch (err: any) {
-      show(err.message || 'Erreur envoi photo..', 'error');
+      show(err.message || "Échec de l'envoi de la photo.", 'error');
       setProofPhoto(null);
     } finally { setUpdating(false); }
   };
@@ -209,8 +246,7 @@ export function ActiveDeliveryPage() {
     if (!delivery) return;
     setUpdating(true);
     try {
-      await api.updateDeliveryStatus(delivery.id, 'delivered');
-      stopTracking();
+      await applyStep('delivered');
       if (delivery.order?.payment_method === 'cash_on_delivery') {
         setShowCashModal(true);
       } else {
@@ -290,19 +326,26 @@ export function ActiveDeliveryPage() {
         </h1>
         {delivery?.driver_earning_estimate != null && (
           <div className="mb-3">
-            <p className="text-white/50 text-sm">Votre gain pour cette course</p>
+            <p className="text-white/80 text-sm">Votre gain pour cette course</p>
             <p className="text-primary font-extrabold text-4xl tabular mt-1">{formatFCFA(delivery.driver_earning_estimate)}</p>
-            <p className="text-white/40 text-xs mt-1">est maintenant disponible sur votre solde</p>
+            <p className="text-white/70 text-xs mt-1">{savedOffline ? 'crédité après synchronisation' : 'est maintenant disponible sur votre solde'}</p>
           </div>
         )}
-        <p className="text-white/50 text-sm mb-8">Livraison effectuée avec succès !</p>
+        <p className="text-white/80 text-sm mb-8">Livraison effectuée avec succès !</p>
       </motion.div>
 
+      {savedOffline && (
+        <div className="mb-6 w-full max-w-xs rounded-2xl bg-warning-500 text-black px-4 py-3 text-left">
+          <p className="font-extrabold text-sm">Enregistré sur le téléphone</p>
+          <p className="text-sm mt-0.5">Pas de réseau pour le moment : l'envoi se fera automatiquement dès le retour du réseau.</p>
+        </div>
+      )}
+
       <div className="flex gap-3 w-full max-w-xs">
-        <Button variant="outline" onClick={() => go({ name: 'earnings' })} className="flex-1 rounded-full border-white/20 text-white hover:bg-white/10">
+        <Button variant="outline" size="lg" onClick={() => go({ name: 'earnings' })} className="flex-1 rounded-full border-white/40 text-white hover:bg-white/10">
           Mes gains
         </Button>
-        <Button onClick={() => go({ name: 'dashboard' })} className="flex-1 rounded-full">
+        <Button size="lg" onClick={() => go({ name: 'dashboard' })} className="flex-1 rounded-full">
           Accueil
         </Button>
       </div>
@@ -347,14 +390,14 @@ export function ActiveDeliveryPage() {
       <div className="min-h-screen flex flex-col bg-background">
         <div className="px-5 pt-safe pt-5 pb-4 bg-foreground">
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setPhase('main')} className="w-9 h-9 rounded-full flex items-center justify-center bg-white/10 tap">
+            <button onClick={() => setPhase('main')} aria-label="Retour" className="w-12 h-12 rounded-full flex items-center justify-center bg-white/15 tap">
               <X size={18} className="text-white" />
             </button>
             <Badge variant="default" dot pulse>RECUPERATION</Badge>
-            <div className="w-9" />
+            <div className="w-12" />
           </div>
           <h1 className="text-white font-extrabold text-xl">Vérifiez la commande</h1>
-          <p className="text-white/50 text-sm mt-1">#{order.reference} · {order.restaurant.name}</p>
+          <p className="text-white/80 text-sm mt-1">#{order.reference} · {order.restaurant.name}</p>
         </div>
 
         <div className="flex-1 px-5 py-6 space-y-3">
@@ -381,19 +424,19 @@ export function ActiveDeliveryPage() {
 
           <button
             onClick={() => setShowIssueSheet(true)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/5 border border-destructive/15 tap mt-4"
+            className="w-full min-h-14 flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/10 border-2 border-destructive/30 tap mt-4"
           >
-            <ShieldAlert size={16} className="text-destructive" />
-            <p className="text-sm font-semibold text-destructive">Signaler un problème</p>
+            <ShieldAlert size={20} className="text-danger-700" />
+            <p className="text-base font-bold text-danger-700">Signaler un problème</p>
           </button>
         </div>
 
-        <div className="px-5 pb-5 safe-bottom">
+        <div className="px-5 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)]">
           <Button
             onClick={confirmPickup}
             disabled={!allChecked || updating}
             size="lg"
-            className="w-full rounded-full"
+            className="w-full rounded-full h-16 text-lg font-extrabold"
           >
             {updating
               ? <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
@@ -414,14 +457,14 @@ export function ActiveDeliveryPage() {
       <div className="min-h-screen flex flex-col bg-background">
         <div className="px-5 pt-safe pt-5 pb-4 bg-foreground">
           <div className="flex items-center justify-between mb-3">
-            <button onClick={() => setPhase('main')} className="w-9 h-9 rounded-full flex items-center justify-center bg-white/10 tap">
+            <button onClick={() => setPhase('main')} aria-label="Retour" className="w-12 h-12 rounded-full flex items-center justify-center bg-white/15 tap">
               <X size={18} className="text-white" />
             </button>
             <Badge variant="default" dot pulse>VERIFICATION</Badge>
-            <div className="w-9" />
+            <div className="w-12" />
           </div>
           <h1 className="text-white font-extrabold text-xl">Confirmer la livraison</h1>
-          <p className="text-white/50 text-sm mt-1">#{order.reference}</p>
+          <p className="text-white/80 text-sm mt-1">#{order.reference}</p>
         </div>
 
         <div className="flex-1 px-5 py-6 space-y-5">
@@ -504,19 +547,19 @@ export function ActiveDeliveryPage() {
 
           <button
             onClick={() => setShowIssueSheet(true)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/5 border border-destructive/15 tap"
+            className="w-full min-h-14 flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/10 border-2 border-destructive/30 tap"
           >
-            <ShieldAlert size={16} className="text-destructive" />
-            <p className="text-sm font-semibold text-destructive">Signaler un problème</p>
+            <ShieldAlert size={20} className="text-danger-700" />
+            <p className="text-base font-bold text-danger-700">Signaler un problème</p>
           </button>
         </div>
 
-        <div className="px-5 pb-5 safe-bottom">
+        <div className="px-5 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)]">
           <Button
             onClick={confirmDelivery}
             disabled={!canFinish || updating}
             size="lg"
-            className="w-full rounded-full"
+            className="w-full rounded-full h-16 text-lg font-extrabold"
           >
             {updating
               ? <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
@@ -538,7 +581,7 @@ export function ActiveDeliveryPage() {
       <div className="px-5 pt-safe pt-5 pb-4 bg-foreground">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-white/40 text-xs">Course en cours</p>
+            <p className="text-white/75 text-xs font-semibold">Course en cours</p>
             <h1 className="text-white font-extrabold text-xl tabular">{order.reference}</h1>
           </div>
           {delivery!.driver_earning_estimate != null && (
@@ -567,10 +610,10 @@ export function ActiveDeliveryPage() {
                   }`}>
                     {i < stepIdx
                       ? <CheckCircle2 size={14} className="text-white" />
-                      : <Icon size={14} className={i === stepIdx ? 'text-white' : 'text-white/40'} />
+                      : <Icon size={14} className={i === stepIdx ? 'text-white' : 'text-white/70'} />
                     }
                   </div>
-                  <p className={`text-[9px] mt-1 font-medium ${i <= stepIdx ? 'text-white' : 'text-white/30'}`}>
+                  <p className={`text-[11px] leading-tight text-center mt-1 font-semibold ${i <= stepIdx ? 'text-white' : 'text-white/60'}`}>
                     {STEP_LABELS[i]}
                   </p>
                 </div>
@@ -617,16 +660,17 @@ export function ActiveDeliveryPage() {
           clientLng={order.delivery_longitude}
         />
         <Button
-          variant="secondary"
-          size="sm"
+          variant="dark"
           onClick={() => openInMaps(targetLat, targetLng, targetLabel)}
-          className="absolute bottom-3 right-3 shadow-card"
+          className="absolute bottom-3 right-3 z-[400] h-12 px-4 rounded-full shadow-elevated"
         >
-          <Navigation size={13} /> Naviguer
+          <Navigation size={18} /> Naviguer
         </Button>
       </div>
 
       <div className="px-5 mt-4 space-y-3">
+
+        <GeoNotice />
 
         {/* TARGET ADDRESS */}
         <Card>
@@ -638,19 +682,19 @@ export function ActiveDeliveryPage() {
               <p className="text-sm font-bold text-muted-foreground">{isPickingUp ? 'Récupérer chez' : 'Livrer à'}</p>
             </div>
             {isPickingUp && <p className="font-extrabold text-base mb-0.5 text-foreground">{order.restaurant.name}</p>}
-            <p className="text-sm text-muted-foreground">{targetLabel}</p>
+            <p className="text-base font-semibold text-foreground">{targetLabel}</p>
 
             {isPickingUp && order.restaurant.phone && (
-              <Button variant="outline" size="sm" className="mt-3" asChild>
+              <Button variant="outline" className="mt-3 w-full text-base" asChild>
                 <a href={`tel:${order.restaurant.phone}`}>
-                  <Phone size={13} /> Appeler le restaurant
+                  <Phone size={18} /> Appeler le restaurant
                 </a>
               </Button>
             )}
             {!isPickingUp && order.delivery_phone && (
-              <Button variant="outline" size="sm" className="mt-3 border-success-200 text-success-600 hover:bg-success-50" asChild>
+              <Button className="mt-3 w-full text-base bg-success-700 text-white shadow-none hover:bg-success-700/90" asChild>
                 <a href={`tel:${order.delivery_phone}`}>
-                  <Phone size={13} /> Appeler le client
+                  <Phone size={18} /> Appeler le client
                 </a>
               </Button>
             )}
@@ -701,20 +745,20 @@ export function ActiveDeliveryPage() {
         {/* #4 — Issue report button */}
         <button
           onClick={() => setShowIssueSheet(true)}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/5 border border-destructive/15 tap"
+          className="w-full min-h-14 flex items-center gap-3 px-4 py-3 rounded-2xl bg-destructive/10 border-2 border-destructive/30 tap"
         >
-          <ShieldAlert size={16} className="text-destructive" />
-          <p className="text-sm font-semibold text-destructive">Signaler un problème</p>
+          <ShieldAlert size={20} className="text-danger-700" />
+          <p className="text-base font-bold text-danger-700">Signaler un problème</p>
         </button>
       </div>
 
       {/* CTA */}
-      <div className="fixed bottom-0 inset-x-0 px-5 py-4 safe-bottom bg-card/97 border-t border-border">
+      <div className="fixed bottom-0 inset-x-0 z-40 px-5 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] bg-card border-t-2 border-border shadow-elevated">
         <Button
           onClick={advance}
           disabled={updating}
           size="lg"
-          className="w-full rounded-full"
+          className="w-full rounded-full h-16 text-lg font-extrabold"
         >
           {updating
             ? <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
@@ -732,6 +776,7 @@ export function ActiveDeliveryPage() {
               <p className="text-sm text-muted-foreground">Entrez le montant total reçu du client.</p>
               <Input
                 type="number"
+                inputMode="numeric"
                 value={cashAmount}
                 onChange={e => setCashAmount(e.target.value)}
                 placeholder={String(delivery?.order?.total ?? '')}
@@ -752,11 +797,17 @@ export function ActiveDeliveryPage() {
                   if (!amount) { show('Entrez le montant collecté.', 'error'); return; }
                   setUpdating(true);
                   try {
-                    const result = await api.confirmCashCollected(delivery!.id, amount);
-                    setCashDebt({ amount_owed: result.amount_owed, restaurant: result.restaurant });
+                    const r = await sendCashCollected(delivery!.id, amount);
                     setShowCashModal(false);
                     setPhase('done');
-                    show(result.amount_owed > 0 ? `Reversez ${formatFCFA(result.amount_owed)} à ${result.restaurant}` : 'Livraison terminée !', result.amount_owed > 0 ? 'info' : 'success');
+                    if (r.data) {
+                      const result = r.data;
+                      setCashDebt({ amount_owed: result.amount_owed, restaurant: result.restaurant });
+                      show(result.amount_owed > 0 ? `Reversez ${formatFCFA(result.amount_owed)} à ${result.restaurant}` : 'Livraison terminée !', result.amount_owed > 0 ? 'info' : 'success');
+                    } else {
+                      setSavedOffline(true);
+                      show('Pas de réseau : collecte enregistrée, envoi automatique au retour du réseau.', 'info');
+                    }
                   } catch (e: any) {
                     show(e.message || 'Erreur', 'error');
                   } finally { setUpdating(false); }
@@ -792,7 +843,7 @@ function IssueSheet({ issues, onSelect, onClose, loading }: {
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-        className="w-full bg-card rounded-t-3xl safe-bottom"
+        className="w-full bg-card rounded-t-3xl pb-[env(safe-area-inset-bottom,0px)]"
         onClick={e => e.stopPropagation()}
       >
         <div className="px-5 pt-5 pb-3 flex items-center justify-between">
@@ -800,8 +851,8 @@ function IssueSheet({ issues, onSelect, onClose, loading }: {
             <ShieldAlert size={18} className="text-destructive" />
             <h2 className="font-extrabold text-lg text-foreground">Signaler un problème</h2>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center bg-muted tap">
-            <X size={16} className="text-muted-foreground" />
+          <button onClick={onClose} aria-label="Fermer" className="w-12 h-12 rounded-full flex items-center justify-center bg-muted tap">
+            <X size={20} className="text-foreground" />
           </button>
         </div>
         <div className="px-5 pb-5 space-y-2">
@@ -810,7 +861,7 @@ function IssueSheet({ issues, onSelect, onClose, loading }: {
               key={issue.type}
               onClick={() => onSelect(issue.type)}
               disabled={loading}
-              className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-border tap hover:bg-muted/50 disabled:opacity-50"
+              className="w-full min-h-14 flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 border-border tap hover:bg-muted/50 disabled:opacity-50"
             >
               <AlertTriangle size={16} className="text-destructive shrink-0" />
               <p className="text-sm font-semibold text-foreground text-left">{issue.label}</p>
@@ -819,7 +870,7 @@ function IssueSheet({ issues, onSelect, onClose, loading }: {
           ))}
           <button
             onClick={() => window.open('tel:+2250501862640')}
-            className="w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl border border-primary/20 bg-primary/5 tap"
+            className="w-full min-h-14 flex items-center gap-3 px-4 py-3.5 rounded-2xl border-2 border-primary/30 bg-primary/10 tap"
           >
             <MessageCircle size={16} className="text-primary shrink-0" />
             <p className="text-sm font-semibold text-primary text-left">Contacter l'assistance</p>
@@ -845,7 +896,7 @@ function DeliveryMap({ restaurantLat, restaurantLng, clientLat, clientLng }: {
       import('leaflet/dist/leaflet.css');
       const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false });
       mapInstance.current = map;
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { crossOrigin: true }).addTo(map);
       const rIcon = L.divIcon({ html: '<div style="background:hsl(24.6,95%,53.1%);width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>', iconSize: [14, 14] });
       const cIcon = L.divIcon({ html: '<div style="background:#22C55E;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>', iconSize: [14, 14] });
       L.marker([restaurantLat, restaurantLng], { icon: rIcon }).addTo(map);

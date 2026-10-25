@@ -50,7 +50,7 @@ export function LoginPage() {
 
         <div className="relative">
           <div className="bg-card rounded-2xl px-5 py-2.5 shadow-pop inline-block mb-5">
-            <img src="/logo.png" alt="MENUPRO" className="h-9 object-contain" />
+            <img src="/logo-wordmark.jpg" alt="MENUPRO Livraison" className="h-11 object-contain" />
           </div>
           <p className="text-white/60 text-base font-medium mb-1">Bonjour,</p>
           <h1 className="text-white font-extrabold text-3xl leading-tight">

@@ -1,4 +1,7 @@
 import type { Driver, Delivery, EarningsSummary, Earning, IssueType } from './types';
+import { markOffline, markOnline, isNetworkError } from './network';
+import { setCachedActiveDelivery, getCachedActiveDelivery } from './activeDelivery';
+import { withPendingStatus, clearOutbox } from './outboxStore';
 
 export const API_BASE = (import.meta.env.VITE_API_BASE as string) || 'https://www.menupro.ci/api/v1';
 
@@ -16,9 +19,27 @@ export function setAuth(token: string, driver: Driver) {
 export function clearAuth() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(DRIVER_KEY);
+  // Données du livreur précédent : ne jamais les laisser à un autre compte sur le même téléphone.
+  clearOutbox();
+  setCachedActiveDelivery(null);
 }
 
-async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
+/** Délai max d'un appel : sur un réseau faible, fetch peut rester bloqué plusieurs minutes sans erreur. */
+const DEFAULT_TIMEOUT_MS = 20000;
+const UPLOAD_TIMEOUT_MS = 90000;
+
+type RequestOptions = RequestInit & { timeoutMs?: number };
+
+function networkError(cause: unknown, timedOut: boolean): Error {
+  const err: any = new Error(timedOut
+    ? 'Le réseau ne répond pas. Réessayez.'
+    : 'Pas de connexion Internet.');
+  err.network = true;
+  err.cause = cause;
+  return err;
+}
+
+export async function request<T>(path: string, opts: RequestOptions = {}): Promise<T> {
   const token = getToken();
   const isFormData = opts.body instanceof FormData;
   const headers: Record<string, string> = {
@@ -30,9 +51,25 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
 
   if (import.meta.env.DEV) console.log(`[API] ${opts.method ?? 'GET'} ${path}`, isFormData ? '(FormData)' : opts.body ?? '');
 
-  const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
+  const { timeoutMs = isFormData ? UPLOAD_TIMEOUT_MS : DEFAULT_TIMEOUT_MS, ...init } = opts;
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
+
+  let res: Response;
+  let text: string;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...init, headers, signal: controller.signal });
+    text = await res.text();
+  } catch (e) {
+    markOffline();
+    throw networkError(e, timedOut);
+  } finally {
+    clearTimeout(timer);
+  }
+  markOnline();
+
   let data: any = null;
-  const text = await res.text();
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
 
   if (!res.ok) {
@@ -114,15 +151,26 @@ export const api = {
     return request(`/driver/deliveries/history?page=${page}`);
   },
 
+  /**
+   * Course active. Hors ligne (ou délai dépassé), renvoie la dernière course connue sur le téléphone
+   * au lieu de « aucune course » : le livreur garde l'adresse, le téléphone du client et ses actions.
+   */
   async getActiveDelivery(): Promise<Delivery | null> {
     try {
       const r = await request<{ data: Delivery | null }>('/driver/deliveries/active');
-      return r.data;
-    } catch { return null; }
+      // Des étapes validées hors ligne peuvent ne pas être encore arrivées au serveur : on les garde.
+      const d = r.data ? withPendingStatus(r.data) : null;
+      setCachedActiveDelivery(d);
+      return d;
+    } catch (e) {
+      if (isNetworkError(e)) return getCachedActiveDelivery();
+      return null;
+    }
   },
 
   async acceptDelivery(id: number): Promise<Delivery> {
     const r = await request<{ data: Delivery }>(`/driver/deliveries/${id}/accept`, { method: 'POST' });
+    setCachedActiveDelivery(r.data);
     return r.data;
   },
 
@@ -135,6 +183,7 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
+    setCachedActiveDelivery(withPendingStatus(r.data));
     return r.data;
   },
 

@@ -8,8 +8,8 @@ export function notify(title: string, body: string, onClick?: () => void): void 
   if (!('Notification' in window) || Notification.permission !== 'granted') return;
   const options = {
     body,
-    icon: '/logo.png',
-    badge: '/logo.png',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/badge-96.png',
     tag: 'driver-alert',
     requireInteraction: true,
   };

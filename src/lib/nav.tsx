@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 
 export type Route =
   | { name: 'dashboard' }
@@ -44,14 +44,17 @@ function initialRoute(): Route {
     if (open === 'deliveries') return { name: 'deliveries' };
     if (open === 'active-delivery') return { name: 'active-delivery' };
     if (open === 'dashboard') return { name: 'dashboard' };
+    if (open === 'earnings') return { name: 'earnings' }; // raccourci « Mes gains » de l'icône
   } catch {}
   return { name: 'dashboard' };
 }
 
 export function NavProvider({ children }: { children: ReactNode }) {
   const [stack, setStack] = useState<Route[]>(() => [initialRoute()]);
-  const [tab, setTab] = useState<NavCtx['tab']>(() =>
-    stack[0]?.name === 'deliveries' ? 'deliveries' : 'dashboard');
+  const [tab, setTab] = useState<NavCtx['tab']>(() => {
+    const first = stack[0]?.name;
+    return first === 'deliveries' || first === 'earnings' ? first : 'dashboard';
+  });
 
   const push    = useCallback((r: Route) => setStack(s => [...s, r]), []);
   const replace = useCallback((r: Route) => setStack(s => [...s.slice(0, -1), r]), []);
@@ -63,6 +66,44 @@ export function NavProvider({ children }: { children: ReactNode }) {
     else if (r.name === 'earnings') setTab('earnings');
     else if (r.name === 'profile') setTab('profile');
   }, []);
+
+  // ── Bouton retour Android ──
+  // La navigation de l'app n'utilise pas l'historique du navigateur : sans précaution, « retour »
+  // fermait l'application. Une entrée « garde » est ajoutée dès qu'on quitte l'accueil ; le retour
+  // la consomme et ramène à l'écran précédent (ou à l'accueil). À l'accueil, « retour » ferme l'app.
+  const isRoot = stack.length === 1 && stack[0].name === 'dashboard';
+  const stackRef = useRef(stack);
+  stackRef.current = stack;
+  const guardRef = useRef(false);
+
+  useEffect(() => {
+    if (isRoot && guardRef.current) {
+      // Revenu à l'accueil par un bouton de l'app : on retire la garde devenue inutile.
+      guardRef.current = false;
+      window.history.back();
+    }
+  }, [isRoot]);
+
+  useEffect(() => {
+    const onPop = () => {
+      const wasGuarded = guardRef.current;
+      guardRef.current = false;
+      if (!wasGuarded) return;
+      const s = stackRef.current;
+      if (s.length > 1) setStack(s.slice(0, -1));
+      else if (s[0]?.name !== 'dashboard') go({ name: 'dashboard' });
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [go]);
+
+  // Hors de l'accueil (y compris après un retour qui n'y ramène pas) : une garde doit être en place.
+  useEffect(() => {
+    if (!isRoot && !guardRef.current) {
+      window.history.pushState({ mpaGuard: true }, '');
+      guardRef.current = true;
+    }
+  }, [stack, isRoot]);
 
   return (
     <Ctx.Provider value={{ stack, tab, push, replace, pop, go, setTab }}>

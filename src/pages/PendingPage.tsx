@@ -31,11 +31,11 @@ export function PendingPage() {
         </div>
 
         <div className="relative mb-6 bg-card rounded-2xl px-6 py-3 shadow-pop">
-          <img src="/logo.png" alt="MENUPRO Livraison" className="h-10 object-contain" />
+          <img src="/logo-wordmark.jpg" alt="MENUPRO Livraison" className="h-12 object-contain" />
         </div>
 
         <div className="relative text-center">
-          <p className="text-white/50 text-sm mb-1">Bienvenue chez</p>
+          <p className="text-white/75 text-sm mb-1">Bienvenue chez</p>
           <h1 className="text-white font-extrabold text-3xl leading-tight">Dossier en<br/>vérification</h1>
         </div>
       </div>
