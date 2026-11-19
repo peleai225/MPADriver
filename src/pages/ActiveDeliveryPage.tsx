@@ -15,6 +15,8 @@ import { openInMaps } from '../lib/geo';
 import { sendDeliveryStatus, sendCashCollected, OUTBOX_SYNCED_EVENT, CASH_SYNCED_EVENT } from '../lib/outbox';
 import { setCachedActiveDelivery, getCachedActiveDelivery } from '../lib/activeDelivery';
 import { GeoNotice } from '../components/GeoNotice';
+import { DeliveryMap } from '../components/DeliveryMap';
+import { getCachedActiveParcel } from '../lib/activeParcel';
 import { compressImage } from '../lib/imageUtils';
 import { listenDeliveryStatus, listenOrderStatus } from '../lib/echo';
 import { vibrate, notify, playAlert } from '../lib/alert';
@@ -47,7 +49,7 @@ const CLIENT_ISSUES: { type: IssueType; label: string }[] = [
 type FlowPhase = 'main' | 'pickup' | 'verify' | 'done';
 
 export function ActiveDeliveryPage() {
-  const { go } = useNav();
+  const { go, replace } = useNav();
   const { show } = useToast();
   const { driver } = useAuth();
   const [delivery, setDelivery] = useState<Delivery | null>(null);
@@ -87,6 +89,12 @@ export function ActiveDeliveryPage() {
     if (cached) { setDelivery(cached); setLoading(false); }
     api.getActiveDelivery().then(d => { setDelivery(d); setLoading(false); }).catch(() => setLoading(false));
   }, []);
+
+  // Pas de course repas mais un colis en cours (raccourci « Course en cours », ancien lien de notification) :
+  // on ouvre l'écran du colis au lieu d'afficher « Aucune course active ».
+  useEffect(() => {
+    if (!loading && !delivery && phase !== 'done' && getCachedActiveParcel()) replace({ name: 'active-parcel' });
+  }, [loading, delivery, phase, replace]);
 
   // Le suivi GPS et l'écran allumé sont gérés pour toute l'app par CourseKeeper.
 
@@ -879,31 +887,4 @@ function IssueSheet({ issues, onSelect, onClose, loading }: {
       </motion.div>
     </div>
   );
-}
-
-// ── DELIVERY MAP ──
-function DeliveryMap({ restaurantLat, restaurantLng, clientLat, clientLng }: {
-  restaurantLat: number; restaurantLng: number; clientLat: number; clientLng: number;
-}) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-
-  useEffect(() => {
-    if (!mapRef.current || mapInstance.current) return;
-    let active = true;
-    import('leaflet').then(L => {
-      if (!active || !mapRef.current || mapInstance.current) return;
-      import('leaflet/dist/leaflet.css');
-      const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false });
-      mapInstance.current = map;
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { crossOrigin: true }).addTo(map);
-      const rIcon = L.divIcon({ html: '<div style="background:hsl(24.6,95%,53.1%);width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>', iconSize: [14, 14] });
-      const cIcon = L.divIcon({ html: '<div style="background:#22C55E;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.3)"></div>', iconSize: [14, 14] });
-      L.marker([restaurantLat, restaurantLng], { icon: rIcon }).addTo(map);
-      L.marker([clientLat, clientLng], { icon: cIcon }).addTo(map);
-      map.fitBounds(L.latLngBounds([[restaurantLat, restaurantLng], [clientLat, clientLng]]), { padding: [40, 40] });
-    });
-    return () => { active = false; mapInstance.current?.remove(); mapInstance.current = null; };
-  }, []);
-  return <div ref={mapRef} className="w-full h-full" />;
 }

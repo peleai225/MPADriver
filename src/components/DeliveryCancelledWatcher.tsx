@@ -5,6 +5,7 @@ import { api } from '../lib/api';
 import { vibrate, playAlert } from '../lib/alert';
 import { onForegroundMessage } from '../lib/firebase';
 import { emitDeliveryCancelled } from '../lib/deliveryEvents';
+import { getCachedActiveParcel, setCachedActiveParcel } from '../lib/activeParcel';
 
 /**
  * Monté en permanence (livreur connecté) : réagit au push `type: 'delivery_cancelled'` reçu
@@ -23,6 +24,24 @@ export function DeliveryCancelledWatcher() {
 
   useEffect(() => {
     return onForegroundMessage((payload: any) => {
+      // Course colis annulée par l'expéditeur ou l'admin (push `parcel_cancelled`).
+      if (payload?.data?.type === 'parcel_cancelled') {
+        const ref = String(payload?.data?.parcel_reference ?? '');
+        const body = payload?.notification?.body || payload?.data?.body;
+        show(body ? `Course colis annulée — ${body}` : 'Course colis annulée par l\'expéditeur.', 'error');
+        vibrate([500, 200, 500, 200, 500]);
+        playAlert();
+        if (!ref || getCachedActiveParcel()?.reference === ref) setCachedActiveParcel(null);
+        emitDeliveryCancelled(null);
+        const cur = stackRef.current[stackRef.current.length - 1];
+        if (cur?.name === 'active-parcel') {
+          api.getActiveParcel()
+            .then(active => { if (!active || active.reference === ref) go({ name: 'dashboard' }); })
+            .catch(() => go({ name: 'dashboard' }));
+        }
+        return;
+      }
+
       if (payload?.data?.type !== 'delivery_cancelled') return;
 
       const raw = Number.parseInt(String(payload?.data?.delivery_id ?? ''), 10);

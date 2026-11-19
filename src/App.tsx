@@ -11,6 +11,7 @@ import { PendingPage } from './pages/PendingPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DeliveriesPage } from './pages/DeliveriesPage';
 import { ActiveDeliveryPage } from './pages/ActiveDeliveryPage';
+import { ActiveParcelPage } from './pages/ActiveParcelPage';
 import { EarningsPage } from './pages/EarningsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { EditProfilePage } from './pages/EditProfilePage';
@@ -57,7 +58,7 @@ function Router() {
     return <PendingPage />;
   }
 
-  const showBottomNav = !['login', 'register', 'pending', 'active-delivery', 'edit-profile'].includes(current.name);
+  const showBottomNav = !['login', 'register', 'pending', 'active-delivery', 'active-parcel', 'edit-profile'].includes(current.name);
   const showInstall = current.name === 'dashboard' && !needRefresh;
 
   return (
@@ -66,6 +67,7 @@ function Router() {
         {current.name === 'dashboard'       && <DashboardPage />}
         {current.name === 'deliveries'      && <DeliveriesPage />}
         {current.name === 'active-delivery' && <ActiveDeliveryPage />}
+        {current.name === 'active-parcel'   && <ActiveParcelPage />}
         {current.name === 'earnings'        && <EarningsPage />}
         {current.name === 'profile'         && <ProfilePage />}
         {current.name === 'edit-profile'    && <EditProfilePage />}

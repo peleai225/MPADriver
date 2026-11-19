@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import {
   TrendingUp, Wallet, Package, Star, ChevronRight, Truck,
   Power, ArrowUpRight, Clock, MapPin, History, Headphones,
-  AlertTriangle, Banknote,
+  AlertTriangle, Banknote, Box,
 } from 'lucide-react';
+import { useCachedActiveParcel } from '../lib/activeParcel';
+import { PARCEL_STATUS_LABELS } from '../lib/parcel';
 import { useAuth } from '../lib/auth';
 import { useNav } from '../lib/nav';
 import { useToast } from '../lib/toast';
@@ -43,6 +45,7 @@ export function DashboardPage() {
 
   const [earnings, setEarnings] = useState<EarningsSummary | null>(null);
   const [activeDelivery, setActiveDelivery] = useState<Delivery | null>(null);
+  const activeParcel = useCachedActiveParcel();
   const [pendingCount, setPendingCount] = useState(0);
   const [cashOwed, setCashOwed] = useState(0);
   const [togglingOnline, setTogglingOnline] = useState(false);
@@ -50,9 +53,14 @@ export function DashboardPage() {
 
   const loadPending = useCallback(async (silent = false) => {
     try {
-      const d = await api.getPendingDeliveries();
-      setPendingCount(d.length);
-      if (!silent && d.length > 0) show(`${d.length} course${d.length > 1 ? 's' : ''} disponible${d.length > 1 ? 's' : ''} !`, 'success');
+      // Courses repas + colis : le compteur reste juste même si l'une des deux listes échoue.
+      const [meals, parcels] = await Promise.all([
+        api.getPendingDeliveries().catch(() => [] as Delivery[]),
+        api.getAvailableParcels().catch(() => []),
+      ]);
+      const n = meals.length + parcels.length;
+      setPendingCount(n);
+      if (!silent && n > 0) show(`${n} course${n > 1 ? 's' : ''} disponible${n > 1 ? 's' : ''} !`, 'success');
     } catch {}
   }, [show]);
 
@@ -60,6 +68,7 @@ export function DashboardPage() {
     await Promise.all([
       api.getEarnings().then(setEarnings).catch(() => {}),
       api.getActiveDelivery().then(setActiveDelivery).catch(() => {}),
+      api.getActiveParcel().catch(() => {}),
       api.getCashBalance().then(r => setCashOwed(r.total_owed_xof ?? 0)).catch(() => {}),
       loadPending(true),
       refresh(),
@@ -76,7 +85,7 @@ export function DashboardPage() {
     requestPushToken().catch(() => {});
     const unsubFcm = onForegroundMessage((payload: any) => {
       // Annulation : alerte gérée par DeliveryCancelledWatcher, rechargement via DELIVERY_CANCELLED_EVENT.
-      if (payload?.data?.type === 'delivery_cancelled') return;
+      if (payload?.data?.type === 'delivery_cancelled' || payload?.data?.type === 'parcel_cancelled') return;
       const title = payload?.notification?.title || 'MENUPRO Livraison';
       const body = payload?.notification?.body || '';
       show(body || title, 'success');
@@ -191,7 +200,7 @@ export function DashboardPage() {
           {/* Online toggle */}
           <button
             onClick={toggleOnline}
-            disabled={togglingOnline || !!activeDelivery}
+            disabled={togglingOnline || !!activeDelivery || !!activeParcel}
             className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 tap transition-all disabled:opacity-60 ${
               isOnline
                 ? 'bg-success-500/20 border border-success-500/30'
@@ -262,6 +271,36 @@ export function DashboardPage() {
                       <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
                     </div>
                     <p className="text-white/75 text-xs truncate mt-0.5">{activeDelivery.order?.restaurant?.name ?? 'Course'}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
+                    <ArrowUpRight size={16} className="text-white" />
+                  </div>
+                </button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ── COLIS EN COURS ── */}
+        {!activeDelivery && activeParcel && (
+          <motion.div variants={fadeUp}>
+            <Card className="overflow-hidden border-0 gradient-dark shadow-elevated">
+              <CardContent className="p-0">
+                <button
+                  onClick={() => go({ name: 'active-parcel' })}
+                  className="w-full px-4 py-3.5 flex items-center gap-3 tap"
+                >
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-info-500/20">
+                    <Box size={20} className="text-info-500" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-white font-bold text-sm">Colis en cours</p>
+                      <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse" />
+                    </div>
+                    <p className="text-white/75 text-xs truncate mt-0.5">
+                      {activeParcel.reference} · {PARCEL_STATUS_LABELS[activeParcel.status] ?? activeParcel.status}
+                    </p>
                   </div>
                   <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
                     <ArrowUpRight size={16} className="text-white" />
@@ -347,7 +386,7 @@ export function DashboardPage() {
         </motion.div>
 
         {/* ── COURSES DISPONIBLES ── */}
-        {!activeDelivery && (
+        {!activeDelivery && !activeParcel && (
           <motion.div variants={fadeUp}>
             <Card className={`shadow-xs transition-all ${pendingCount > 0 && isOnline ? 'border-primary/30 bg-primary/[0.03] shadow-card' : ''}`}>
               <CardContent className="p-0">

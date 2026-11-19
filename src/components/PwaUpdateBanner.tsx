@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Download } from 'lucide-react';
 import { usePwaNeedRefresh, applyPwaUpdate } from '../lib/pwa';
 import { useCachedActiveDelivery } from '../lib/activeDelivery';
+import { useCachedActiveParcel } from '../lib/activeParcel';
 import { useOutboxCount } from '../lib/outboxStore';
 
 /**
@@ -12,10 +13,11 @@ import { useOutboxCount } from '../lib/outboxStore';
 export function PwaUpdateBanner() {
   const needRefresh = usePwaNeedRefresh();
   const active = useCachedActiveDelivery();
+  const parcel = useCachedActiveParcel();
   const pending = useOutboxCount();
   const [updating, setUpdating] = useState(false);
 
-  if (!needRefresh || active || pending > 0) return null;
+  if (!needRefresh || active || parcel || pending > 0) return null;
 
   return (
     <div className="fixed inset-x-0 z-[95] px-3 pointer-events-none" style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>

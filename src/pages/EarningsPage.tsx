@@ -153,7 +153,7 @@ export function EarningsPage() {
                     <CardContent className="p-3 flex items-center justify-between">
                       <div>
                         <p className="text-sm font-semibold text-foreground">{debt.restaurant_name}</p>
-                        <p className="text-xs text-muted-foreground tabular">Cmd {debt.order_ref}</p>
+                        <p className="text-xs text-muted-foreground tabular">{debt.kind === 'parcel' ? 'Colis' : 'Cmd'} {debt.order_ref}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-sm tabular text-foreground">{formatFCFA(debt.amount_xof)}</p>
@@ -201,7 +201,12 @@ export function EarningsPage() {
                       <Wallet size={17} className={e.status === 'paid' ? 'text-success-600' : 'text-primary'} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-foreground tabular">{e.order?.reference ?? `#${e.id}`}</p>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {e.kind === 'parcel' && (
+                          <span className="rounded-full px-1.5 py-0.5 text-[10px] font-extrabold bg-info-500 text-white shrink-0">COLIS</span>
+                        )}
+                        <p className="font-bold text-sm text-foreground tabular truncate">{e.order_ref ?? e.order?.reference ?? `#${e.id}`}</p>
+                      </div>
                       <div className="flex items-center gap-1 mt-0.5">
                         <Clock size={10} className="text-muted-foreground" />
                         <p className="text-xs text-muted-foreground">{formatDate(e.created_at)}</p>
@@ -210,7 +215,8 @@ export function EarningsPage() {
                     <div className="text-right">
                       <p className="font-extrabold text-base tabular text-success-500">+{formatFCFA(e.net_amount)}</p>
                       <Badge variant={e.status === 'paid' ? 'success' : 'default'} className="text-[10px]">
-                        {e.status === 'paid' ? 'Viré' : 'Disponible'}
+                        {/* Colis payé en espèces : gain encaissé au ramassage (statut « paid », non retirable). */}
+                        {e.status === 'paid' ? (e.kind === 'parcel' ? 'Encaissé' : 'Viré') : 'Disponible'}
                       </Badge>
                     </div>
                   </CardContent>

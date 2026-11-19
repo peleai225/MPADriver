@@ -1,9 +1,15 @@
 import { Home, Package, Navigation, Wallet, User } from 'lucide-react';
 import { useNav } from '../lib/nav';
+import { useCachedActiveDelivery } from '../lib/activeDelivery';
+import { useCachedActiveParcel } from '../lib/activeParcel';
 import { cn } from '@/lib/utils';
 
 export function BottomNav() {
   const { tab, go } = useNav();
+  // Bouton central : ouvre la course en cours, repas ou colis (une seule à la fois).
+  const activeDelivery = useCachedActiveDelivery();
+  const activeParcel = useCachedActiveParcel();
+  const courseRoute = activeParcel && !activeDelivery ? 'active-parcel' : 'active-delivery';
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 safe-bottom bg-card border-t border-border shadow-soft">
@@ -14,7 +20,8 @@ export function BottomNav() {
 
         {/* FAB central */}
         <button
-          onClick={() => go({ name: 'active-delivery' })}
+          onClick={() => go({ name: courseRoute })}
+          aria-label="Course en cours"
           className="tap flex items-center justify-center rounded-full -mt-6 gradient-brand shadow-pop"
           style={{ width: '58px', height: '58px' }}
         >

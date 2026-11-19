@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
   RefreshCw, MapPin, Clock, ChevronRight, Package, Truck,
-  CheckCircle2, Search, Inbox, WifiOff, Power,
+  CheckCircle2, Search, Inbox, WifiOff, Power, Box,
 } from 'lucide-react';
 import { HistoryDetailSheet } from '../components/HistoryDetailSheet';
 import { useOnline, isNetworkError } from '../lib/network';
@@ -22,8 +22,104 @@ import { Skeleton } from '../components/ui/skeleton';
 import { usePullToRefresh } from '../lib/usePullToRefresh';
 import { clearBadge } from '../lib/badge';
 import { DELIVERY_CANCELLED_EVENT } from '../lib/deliveryEvents';
-import type { Delivery } from '../lib/types';
+import { onForegroundMessage } from '../lib/firebase';
+import { useCachedActiveParcel } from '../lib/activeParcel';
+import { PARCEL_STATUS_LABELS, parcelSizeLabel, parcelErrorCode } from '../lib/parcel';
+import { ParcelCard } from '../components/ParcelCard';
+import { ParcelDetailSheet } from '../components/ParcelDetailSheet';
+import type { Delivery, Parcel } from '../lib/types';
 import { formatFCFA, DELIVERY_STATUS_LABELS } from '../lib/format';
+
+/** Historique mélangé repas + colis, trié du plus récent au plus ancien. */
+type HistoryItem = { kind: 'meal'; at: number; d: Delivery } | { kind: 'parcel'; at: number; p: Parcel };
+
+const BUSY_REASON = 'Terminez votre course en cours avant d\'en accepter une autre.';
+
+function timeOf(...isos: Array<string | null | undefined>): number {
+  for (const iso of isos) { const t = iso ? Date.parse(iso) : NaN; if (Number.isFinite(t)) return t; }
+  return 0;
+}
+
+function mergeHistory(meals: Delivery[], parcels: Parcel[]): HistoryItem[] {
+  return [
+    ...meals.map(d => ({ kind: 'meal' as const, at: timeOf(d.delivered_at, d.cancelled_at, d.created_at), d })),
+    ...parcels.map(p => ({ kind: 'parcel' as const, at: timeOf(p.delivered_at, p.picked_up_at, p.assigned_at, p.created_at), p })),
+  ].sort((a, b) => b.at - a.at);
+}
+
+function ParcelHistoryCard({ parcel, onOpen }: { parcel: Parcel; onOpen: () => void }) {
+  const isDone = parcel.status === 'delivered';
+  const isBad = parcel.status === 'failed' || parcel.status === 'cancelled';
+  return (
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
+        <button type="button" onClick={onOpen} className="w-full text-left tap block">
+          <div className="px-4 py-3 flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 bg-info-50">
+              <Box size={18} className="text-info-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-extrabold bg-info-500 text-white">COLIS</span>
+                <p className="font-bold text-sm truncate text-foreground">{parcelSizeLabel(parcel)}{parcel.description ? ` · ${parcel.description}` : ''}</p>
+              </div>
+              <div className="flex items-center gap-1 mt-0.5">
+                <MapPin size={11} className="text-muted-foreground" />
+                <p className="text-xs truncate text-muted-foreground">{parcel.dropoff.address}</p>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <Badge variant={isDone ? 'success' : isBad ? 'destructive' : 'muted'}>{PARCEL_STATUS_LABELS[parcel.status] ?? parcel.status}</Badge>
+              {isDone && parcel.driver_earning_estimate != null && parcel.driver_earning_estimate > 0 && (
+                <p className="text-sm font-extrabold mt-1 tabular text-primary">+{formatFCFA(parcel.driver_earning_estimate)}</p>
+              )}
+            </div>
+          </div>
+          <div className="px-4 py-2.5 flex items-center gap-4 border-t border-border/60">
+            <span className="text-xs text-muted-foreground tabular">{parcel.reference}</span>
+            {parcel.distance_km != null && (
+              <div className="flex items-center gap-1 ml-auto">
+                <MapPin size={10} className="text-muted-foreground" />
+                <span className="text-xs text-muted-foreground tabular">{Number(parcel.distance_km).toFixed(1)} km</span>
+              </div>
+            )}
+            <ChevronRight size={16} className="text-muted-foreground ml-auto shrink-0" />
+          </div>
+        </button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActiveParcelBanner({ parcel, onGo }: { parcel: Parcel; onGo: () => void }) {
+  return (
+    <Card className="overflow-hidden border-0 gradient-dark shadow-elevated">
+      <CardContent className="p-0">
+        <button onClick={onGo} className="w-full text-left tap px-4 py-3.5 flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-info-500/20">
+            <Box size={22} className="text-info-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white/80 text-[10px] font-semibold uppercase tracking-wider">Colis en cours</p>
+            <p className="text-white font-bold text-sm leading-tight mt-0.5 truncate">{parcel.reference} · {parcelSizeLabel(parcel)}</p>
+            <div className="flex items-center gap-1 mt-1">
+              <Clock size={11} className="text-white/75" />
+              <p className="text-white/75 text-xs">{PARCEL_STATUS_LABELS[parcel.status] ?? parcel.status}</p>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1.5">
+            {parcel.driver_earning_estimate != null && (
+              <p className="text-white font-extrabold text-lg tabular">{formatFCFA(parcel.driver_earning_estimate)}</p>
+            )}
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white/10">
+              <ChevronRight size={16} className="text-white" />
+            </div>
+          </div>
+        </button>
+      </CardContent>
+    </Card>
+  );
+}
 
 type Tab = 'available' | 'active' | 'done';
 
@@ -146,11 +242,26 @@ export function DeliveriesPage() {
   const [actionId, setActionId] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>('available');
 
+  // Colis : listés avec les courses repas.
+  const [parcels, setParcels] = useState<Parcel[]>([]);
+  const activeParcel = useCachedActiveParcel();
+  const [parcelActionRef, setParcelActionRef] = useState<string | null>(null);
+  const [parcelDetail, setParcelDetail] = useState<{ parcel: Parcel; available: boolean } | null>(null);
+  const [parcelHistory, setParcelHistory] = useState<Parcel[]>([]);
+  const [parcelHistoryPage, setParcelHistoryPage] = useState(1);
+  const [parcelHistoryLastPage, setParcelHistoryLastPage] = useState(1);
+
+  const busy = !!activeDelivery || !!activeParcel;
+  const availableCount = pending.length + parcels.length;
+
   const loadPending = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const data = await api.getPendingDeliveries();
-      setPending(data);
+      // Une panne de l'API colis ne doit pas masquer les courses repas (et inversement).
+      const [meals, parcelList] = await Promise.allSettled([api.getPendingDeliveries(), api.getAvailableParcels()]);
+      if (meals.status === 'fulfilled') setPending(meals.value);
+      if (parcelList.status === 'fulfilled') setParcels(parcelList.value);
+      if (meals.status === 'rejected') throw meals.reason;
     } catch (e) {
       // Hors ligne : le bandeau réseau et l'état vide le disent déjà, pas de toast en plus.
       if (!silent && !isNetworkError(e)) show('Impossible de charger les courses.', 'error');
@@ -161,7 +272,7 @@ export function DeliveriesPage() {
 
   const loadActive = useCallback(async () => {
     try {
-      const d = await api.getActiveDelivery();
+      const [d] = await Promise.all([api.getActiveDelivery(), api.getActiveParcel()]);
       setActiveDelivery(d);
     } catch {}
   }, []);
@@ -169,10 +280,16 @@ export function DeliveriesPage() {
   const loadHistory = useCallback(async () => {
     setHistoryLoading(true);
     try {
-      const r = await api.getDeliveryHistory(1);
-      setHistory(r.data);
+      const [meals, parcelHist] = await Promise.all([
+        api.getDeliveryHistory(1),
+        api.getParcelHistory(1).catch(() => null),
+      ]);
+      setHistory(meals.data);
       setHistoryPage(1);
-      setHistoryLastPage(r.meta?.last_page ?? 1);
+      setHistoryLastPage(meals.meta?.last_page ?? 1);
+      setParcelHistory(parcelHist?.data ?? []);
+      setParcelHistoryPage(1);
+      setParcelHistoryLastPage(parcelHist?.meta?.last_page ?? 1);
       setHistoryLoaded(true);
     } catch {
       show('Impossible de charger l\'historique.', 'error');
@@ -181,20 +298,50 @@ export function DeliveriesPage() {
     }
   }, [show]);
 
-  // Pagination de l'historique (20 courses par page côté API).
+  // Pagination de l'historique (20 courses par page côté API, repas et colis séparément).
   const loadMoreHistory = async () => {
-    const next = historyPage + 1;
     setHistoryMoreLoading(true);
     try {
-      const r = await api.getDeliveryHistory(next);
-      setHistory(h => [...h, ...r.data.filter(d => !h.some(x => x.id === d.id))]);
-      setHistoryPage(next);
-      setHistoryLastPage(r.meta?.last_page ?? next);
+      if (historyPage < historyLastPage) {
+        const next = historyPage + 1;
+        const r = await api.getDeliveryHistory(next);
+        setHistory(h => [...h, ...r.data.filter(d => !h.some(x => x.id === d.id))]);
+        setHistoryPage(next);
+        setHistoryLastPage(r.meta?.last_page ?? next);
+      }
+      if (parcelHistoryPage < parcelHistoryLastPage) {
+        const next = parcelHistoryPage + 1;
+        const r = await api.getParcelHistory(next);
+        setParcelHistory(h => [...h, ...r.data.filter(p => !h.some(x => x.reference === p.reference))]);
+        setParcelHistoryPage(next);
+        setParcelHistoryLastPage(r.meta?.last_page ?? next);
+      }
     } catch (err: any) {
       show(err.message || 'Impossible de charger la suite.', 'error');
     } finally {
       setHistoryMoreLoading(false);
     }
+  };
+
+  const handleAcceptParcel = async (reference: string) => {
+    setParcelActionRef(reference);
+    try {
+      await api.acceptParcel(reference);
+      setParcelDetail(null);
+      show('Course colis acceptée !', 'success');
+      go({ name: 'active-parcel' });
+    } catch (err: any) {
+      show(err.message || 'Erreur.', 'error');
+      const code = parcelErrorCode(err);
+      // Prise par un autre livreur / plus disponible : on la retire et on rafraîchit.
+      if (err?.status === 409 || err?.status === 404 || code === 'already_taken' || code === 'wrong_city') {
+        setParcels(list => list.filter(x => x.reference !== reference));
+        setParcelDetail(null);
+        loadPending(true);
+      } else if (code === 'driver_busy') {
+        loadActive();
+      }
+    } finally { setParcelActionRef(null); }
   };
 
   const handleRefresh = useCallback(async () => {
@@ -223,6 +370,13 @@ export function DeliveriesPage() {
   useEffect(() => {
     if (tab === 'done' && !historyLoaded) loadHistory();
   }, [tab, historyLoaded, loadHistory]);
+
+  // Push « nouvelle course colis » reçu app ouverte : la liste se met à jour tout de suite.
+  useEffect(() => onForegroundMessage((payload: any) => {
+    const type = payload?.data?.type;
+    if (type === 'new_parcel') { loadPending(true); vibrate([100, 50, 100]); playAlert(); }
+    else if (type === 'parcel_cancelled') { loadPending(true); loadActive(); }
+  }), [loadPending, loadActive]);
 
   useEffect(() => {
     if (!driver?.city) return;
@@ -271,7 +425,7 @@ export function DeliveriesPage() {
 
       <PageHeader
         title="Courses"
-        badgeCount={pending.length}
+        badgeCount={availableCount}
       />
 
       <div className="px-5 mt-4">
@@ -280,16 +434,16 @@ export function DeliveriesPage() {
             <TabsTrigger value="available" className="gap-1.5">
               <Package size={15} />
               <span>Disponibles</span>
-              {pending.length > 0 && (
+              {availableCount > 0 && (
                 <Badge variant={tab === 'available' ? 'default' : 'muted'} className="text-[9px] px-1.5 py-0 h-4 ml-1">
-                  {pending.length}
+                  {availableCount}
                 </Badge>
               )}
             </TabsTrigger>
             <TabsTrigger value="active" className="gap-1.5">
               <Truck size={15} />
               <span>En cours</span>
-              {activeDelivery && (
+              {(activeDelivery || activeParcel) && (
                 <span className="w-2 h-2 rounded-full bg-success-500 animate-pulse ml-1" />
               )}
             </TabsTrigger>
@@ -301,19 +455,35 @@ export function DeliveriesPage() {
 
           <TabsContent value="available">
             <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
-              {loading && pending.length === 0 ? (
+              {loading && availableCount === 0 ? (
                 <>
                   <Skeleton className="h-52 rounded-2xl" />
                   <Skeleton className="h-52 rounded-2xl" />
                 </>
-              ) : pending.length > 0 ? (
+              ) : availableCount > 0 ? (
                 <>
-                  <motion.div variants={fadeUp} className="flex items-center gap-2">
+                  <motion.div variants={fadeUp} className="flex items-center gap-2 flex-wrap">
                     <span className="w-2 h-2 rounded-full bg-primary" />
                     <p className="font-bold text-sm text-foreground">
-                      {pending.length} course{pending.length > 1 ? 's' : ''} disponible{pending.length > 1 ? 's' : ''}
+                      {availableCount} course{availableCount > 1 ? 's' : ''} disponible{availableCount > 1 ? 's' : ''}
                     </p>
+                    {parcels.length > 0 && (
+                      <span className="text-xs font-semibold text-info-700">
+                        dont {parcels.length} colis
+                      </span>
+                    )}
                   </motion.div>
+                  {busy && (
+                    <motion.div variants={fadeUp}>
+                      <button
+                        onClick={() => go({ name: activeParcel && !activeDelivery ? 'active-parcel' : 'active-delivery' })}
+                        className="w-full text-left rounded-2xl bg-warning-50 border border-warning-200 px-4 py-3 tap"
+                      >
+                        <p className="text-sm font-bold text-warning-700">Une course est déjà en cours</p>
+                        <p className="text-xs text-warning-700">Une seule course à la fois (repas ou colis). Touchez pour la reprendre.</p>
+                      </button>
+                    </motion.div>
+                  )}
                   {pending.map(d => (
                     <motion.div key={d.id} variants={fadeUp}>
                       <DeliveryCard
@@ -321,6 +491,18 @@ export function DeliveriesPage() {
                         loading={actionId === d.id}
                         onAccept={() => handleAccept(d.id)}
                         onDecline={() => handleDecline(d.id)}
+                        blockedReason={busy ? BUSY_REASON : null}
+                      />
+                    </motion.div>
+                  ))}
+                  {parcels.map(p => (
+                    <motion.div key={p.reference} variants={fadeUp}>
+                      <ParcelCard
+                        parcel={p}
+                        loading={parcelActionRef === p.reference}
+                        onAccept={() => handleAcceptParcel(p.reference)}
+                        onOpen={() => setParcelDetail({ parcel: p, available: true })}
+                        blockedReason={busy ? BUSY_REASON : null}
                       />
                     </motion.div>
                   ))}
@@ -359,7 +541,8 @@ export function DeliveriesPage() {
                           </div>
                           <p className="font-bold text-base text-foreground">Aucune course pour le moment</p>
                           <p className="text-sm mt-1 text-muted-foreground max-w-[260px]">
-                            Une course apparaît dès qu'un restaurant de {driver?.city ?? 'votre ville'} accepte une commande.
+                            Une course apparaît dès qu'un restaurant de {driver?.city ?? 'votre ville'} accepte une commande
+                            ou qu'un colis est à livrer.
                             Restez en ligne : vous serez alerté.
                           </p>
                         </>
@@ -384,14 +567,16 @@ export function DeliveriesPage() {
 
           <TabsContent value="active">
             <motion.div variants={stagger} initial="hidden" animate="show" className="space-y-3">
-              {activeDelivery ? (
+              {activeDelivery || activeParcel ? (
                 <>
                   <motion.div variants={fadeUp} className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full animate-pulse bg-success-500" />
                     <p className="font-bold text-sm text-foreground">Votre course active</p>
                   </motion.div>
                   <motion.div variants={fadeUp}>
-                    <ActiveDeliveryBanner delivery={activeDelivery} onGo={() => go({ name: 'active-delivery' })} />
+                    {activeDelivery
+                      ? <ActiveDeliveryBanner delivery={activeDelivery} onGo={() => go({ name: 'active-delivery' })} />
+                      : activeParcel && <ActiveParcelBanner parcel={activeParcel} onGo={() => go({ name: 'active-parcel' })} />}
                   </motion.div>
                 </>
               ) : (
@@ -421,7 +606,7 @@ export function DeliveriesPage() {
                   <Skeleton className="h-20 rounded-2xl" />
                   <Skeleton className="h-20 rounded-2xl" />
                 </>
-              ) : history.length > 0 ? (
+              ) : history.length + parcelHistory.length > 0 ? (
                 <>
                   <motion.div variants={fadeUp} className="flex items-center justify-between">
                     <p className="font-bold text-sm text-foreground">Historique</p>
@@ -429,12 +614,18 @@ export function DeliveriesPage() {
                       <RefreshCw size={18} className={historyLoading ? 'animate-spin' : ''} />
                     </Button>
                   </motion.div>
-                  {history.map(d => (
-                    <motion.div key={d.id} variants={fadeUp}>
-                      <CompletedCard delivery={d} onOpen={() => setDetail(d)} />
-                    </motion.div>
+                  {mergeHistory(history, parcelHistory).map(item => (
+                    item.kind === 'meal' ? (
+                      <motion.div key={`m-${item.d.id}`} variants={fadeUp}>
+                        <CompletedCard delivery={item.d} onOpen={() => setDetail(item.d)} />
+                      </motion.div>
+                    ) : (
+                      <motion.div key={`p-${item.p.reference}`} variants={fadeUp}>
+                        <ParcelHistoryCard parcel={item.p} onOpen={() => setParcelDetail({ parcel: item.p, available: false })} />
+                      </motion.div>
+                    )
                   ))}
-                  {historyPage < historyLastPage && (
+                  {(historyPage < historyLastPage || parcelHistoryPage < parcelHistoryLastPage) && (
                     <Button
                       variant="outline"
                       onClick={loadMoreHistory}
@@ -466,6 +657,13 @@ export function DeliveriesPage() {
       </div>
 
       <HistoryDetailSheet delivery={detail} onClose={() => setDetail(null)} />
+      <ParcelDetailSheet
+        parcel={parcelDetail?.parcel ?? null}
+        onClose={() => setParcelDetail(null)}
+        onAccept={parcelDetail?.available ? () => handleAcceptParcel(parcelDetail.parcel.reference) : undefined}
+        accepting={!!parcelDetail && parcelActionRef === parcelDetail.parcel.reference}
+        blockedReason={busy ? BUSY_REASON : null}
+      />
     </div>
   );
 }

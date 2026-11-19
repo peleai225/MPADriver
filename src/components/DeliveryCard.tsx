@@ -10,6 +10,8 @@ interface Props {
   onAccept: () => void;
   onDecline: () => void;
   loading?: boolean;
+  /** Acceptation impossible (une course, repas ou colis, est déjà en cours). */
+  blockedReason?: string | null;
 }
 
 /**
@@ -18,7 +20,7 @@ interface Props {
  * (L'ancien compte à rebours de 3 min était purement local : il bloquait « Accepter » alors que la
  * course restait disponible côté serveur. Retiré.)
  */
-export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) {
+export function DeliveryCard({ delivery, onAccept, onDecline, loading, blockedReason }: Props) {
   const order = delivery.order;
   if (!order) return null;
 
@@ -87,6 +89,10 @@ export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) 
         </div>
       </div>
 
+      {blockedReason && (
+        <p className="mx-4 mb-2 text-xs font-semibold text-warning-700">{blockedReason}</p>
+      )}
+
       {/* Actions : cibles ≥ 48 px */}
       <div className="px-3 pb-3 flex gap-2">
         <Button
@@ -100,7 +106,7 @@ export function DeliveryCard({ delivery, onAccept, onDecline, loading }: Props) 
         <Button
           className="flex-[2] h-12 rounded-full text-base font-extrabold"
           onClick={onAccept}
-          disabled={loading}
+          disabled={loading || !!blockedReason}
         >
           {loading ? (
             <span className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />

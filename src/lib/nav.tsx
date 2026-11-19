@@ -4,6 +4,7 @@ export type Route =
   | { name: 'dashboard' }
   | { name: 'deliveries' }
   | { name: 'active-delivery' }
+  | { name: 'active-parcel' }
   | { name: 'earnings' }
   | { name: 'profile' }
   | { name: 'edit-profile' }
@@ -30,7 +31,8 @@ export const useNav = () => useContext(Ctx);
 
 /**
  * Écran demandé par un clic sur une notification push (lien `/?open=deliveries`, `/?open=active-delivery`,
- * `/?open=dashboard` pour une course annulée).
+ * `/?open=dashboard` pour une course annulée, `/?open=parcels` pour une nouvelle course colis — les colis
+ * disponibles sont listés avec les courses repas —, `/?open=active-parcel` pour le colis en cours).
  * Le paramètre est retiré de l'URL (quelle que soit sa valeur) pour ne pas rouvrir le même écran au rechargement.
  */
 function initialRoute(): Route {
@@ -41,7 +43,8 @@ function initialRoute(): Route {
       url.searchParams.delete('open');
       window.history.replaceState(null, '', url.pathname + url.search + url.hash);
     }
-    if (open === 'deliveries') return { name: 'deliveries' };
+    if (open === 'deliveries' || open === 'parcels') return { name: 'deliveries' };
+    if (open === 'active-parcel') return { name: 'active-parcel' };
     if (open === 'active-delivery') return { name: 'active-delivery' };
     if (open === 'dashboard') return { name: 'dashboard' };
     if (open === 'earnings') return { name: 'earnings' }; // raccourci « Mes gains » de l'icône

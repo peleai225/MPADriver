@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from 'react';
-import type { Delivery } from './types';
+import type { Delivery, Parcel } from './types';
 
 /**
  * File d'attente persistante des actions critiques faites sans réseau (stockée sur le téléphone,
@@ -11,9 +11,16 @@ import type { Delivery } from './types';
 
 export type DeliveryStep = 'heading_to_restaurant' | 'picked_up' | 'delivering' | 'delivered';
 
+/**
+ * Actions colis rejouables hors ligne (clé `parcel:COL-XXXXXX:start`). Le ramassage (photo) et la remise
+ * (code vérifié par le serveur, essais comptés) exigent le réseau : ils ne passent jamais par la file.
+ */
+export type ParcelStep = 'start' | 'fail';
+
 export type OutboxItem =
   | { key: string; kind: 'status'; deliveryId: number; status: DeliveryStep; createdAt: number; attempts: number }
   | { key: string; kind: 'cash'; deliveryId: number; amount: number; createdAt: number; attempts: number }
+  | { key: string; kind: 'parcel'; reference: string; step: ParcelStep; reason?: string; createdAt: number; attempts: number }
   | {
       key: string; kind: 'location'; lat: number; lng: number;
       accuracy?: number; speed?: number; heading?: number; createdAt: number; attempts: number;
@@ -23,6 +30,7 @@ export type OutboxItem =
 export type NewOutboxItem =
   | { kind: 'status'; deliveryId: number; status: DeliveryStep }
   | { kind: 'cash'; deliveryId: number; amount: number }
+  | { kind: 'parcel'; reference: string; step: ParcelStep; reason?: string }
   | { kind: 'location'; lat: number; lng: number; accuracy?: number; speed?: number; heading?: number };
 
 const KEY = 'mpa_outbox';
@@ -52,6 +60,7 @@ function save(list: OutboxItem[]): void {
 function keyOf(item: NewOutboxItem): string {
   if (item.kind === 'status') return `status:${item.deliveryId}:${item.status}`;
   if (item.kind === 'cash') return `cash:${item.deliveryId}`;
+  if (item.kind === 'parcel') return `parcel:${item.reference}:${item.step}`;
   return 'location';
 }
 
@@ -85,7 +94,23 @@ export function clearOutbox(): void { save([]); }
 
 /** Actions critiques encore en attente pour cette course (statut, cash). */
 export function hasPendingFor(deliveryId: number): boolean {
-  return load().some(i => i.kind !== 'location' && i.deliveryId === deliveryId);
+  return load().some(i => (i.kind === 'status' || i.kind === 'cash') && i.deliveryId === deliveryId);
+}
+
+/** Actions encore en attente pour ce colis. */
+export function hasPendingForParcel(reference: string): boolean {
+  return load().some(i => i.kind === 'parcel' && i.reference === reference);
+}
+
+/**
+ * Applique à un colis venu du serveur les actions faites hors ligne et pas encore envoyées :
+ * « démarrer » fait passer de picked_up à delivering ; un « échec » en attente retire la course active.
+ */
+export function withPendingParcelStatus(p: Parcel): Parcel | null {
+  const pending = load().filter((i): i is Extract<OutboxItem, { kind: 'parcel' }> => i.kind === 'parcel' && i.reference === p.reference);
+  if (pending.some(i => i.step === 'fail')) return null;
+  if (p.status === 'picked_up' && pending.some(i => i.step === 'start')) return { ...p, status: 'delivering' };
+  return p;
 }
 
 /**

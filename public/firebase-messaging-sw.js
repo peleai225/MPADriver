@@ -6,8 +6,8 @@
  *
  * Les pushs envoyés par le serveur contiennent un bloc `notification` : le SDK Firebase les
  * affiche lui-même (titre, icône, vibration, requireInteraction définis côté serveur) et ouvre
- * le lien `fcm_options.link` au clic (/?open=deliveries, /?open=active-delivery ou
- * /?open=dashboard pour une course annulée).
+ * le lien `fcm_options.link` au clic (/?open=deliveries, /?open=active-delivery,
+ * /?open=dashboard pour une course annulée, /?open=parcels pour une nouvelle course colis).
  */
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
@@ -48,6 +48,9 @@ async function updateAppBadge(payload) {
 function linkForType(type) {
   if (type === 'new_delivery') return '/?open=deliveries';
   if (type === 'delivery_cancelled') return '/?open=dashboard';
+  // Colis : même liens que ceux envoyés par le serveur (ParcelDriverNotification).
+  if (type === 'new_parcel') return '/?open=parcels';
+  if (type === 'parcel_cancelled') return '/?open=deliveries';
   return '/?open=active-delivery';
 }
 
@@ -59,14 +62,20 @@ messaging.onBackgroundMessage(async (payload) => {
 
   if (!payload.notification) {
     // Données seules : le SDK ne les affiche pas, on s'en charge.
-    const isNewOrder = data.type === 'new_delivery';
-    const isCancelled = data.type === 'delivery_cancelled';
+    const isNewOrder = data.type === 'new_delivery' || data.type === 'new_parcel';
+    const isCancelled = data.type === 'delivery_cancelled' || data.type === 'parcel_cancelled';
+    const isParcel = data.kind === 'parcel' || /parcel/.test(data.type || '');
+    const fallbackTitle = isCancelled
+      ? (isParcel ? 'Course colis annulée' : 'Course annulée')
+      : (data.type === 'new_parcel' ? 'Nouvelle course colis' : 'MENUPRO Livraison');
     try {
-      await self.registration.showNotification(data.title || (isCancelled ? 'Course annulée' : 'MENUPRO Livraison'), {
+      await self.registration.showNotification(data.title || fallbackTitle, {
         body: data.body || (isCancelled ? 'Une course a été annulée.' : 'Nouvelle notification'),
         icon: '/icons/icon-192.png',
         badge: '/icons/badge-96.png',
-        tag: data.delivery_id ? `delivery-${data.delivery_id}` : 'menupro-delivery',
+        tag: data.parcel_reference
+          ? `parcel-${data.parcel_reference}`
+          : (data.delivery_id ? `delivery-${data.delivery_id}` : 'menupro-delivery'),
         renotify: true,
         requireInteraction: true,
         vibrate: isNewOrder || isCancelled ? [0, 500, 300, 500, 300, 500] : [200, 100, 200],

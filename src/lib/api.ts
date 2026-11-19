@@ -1,7 +1,8 @@
-import type { Driver, Delivery, EarningsSummary, Earning, IssueType } from './types';
+import type { Driver, Delivery, EarningsSummary, Earning, IssueType, Parcel } from './types';
 import { markOffline, markOnline, isNetworkError } from './network';
 import { setCachedActiveDelivery, getCachedActiveDelivery } from './activeDelivery';
-import { withPendingStatus, clearOutbox } from './outboxStore';
+import { setCachedActiveParcel, getCachedActiveParcel } from './activeParcel';
+import { withPendingStatus, withPendingParcelStatus, clearOutbox } from './outboxStore';
 
 export const API_BASE = (import.meta.env.VITE_API_BASE as string) || 'https://www.menupro.ci/api/v1';
 
@@ -22,6 +23,7 @@ export function clearAuth() {
   // Données du livreur précédent : ne jamais les laisser à un autre compte sur le même téléphone.
   clearOutbox();
   setCachedActiveDelivery(null);
+  setCachedActiveParcel(null);
 }
 
 /** Délai max d'un appel : sur un réseau faible, fetch peut rester bloqué plusieurs minutes sans erreur. */
@@ -255,5 +257,74 @@ export const api = {
 
   async getCashRemittances(): Promise<any> {
     return await request('/driver/cash-remittances');
+  },
+
+  // ── Colis (/driver/parcels/*) ──
+  // Erreurs métier : { message, error_code, …extra } (ex. attempts_left) — disponibles dans err.data.
+
+  async getAvailableParcels(): Promise<Parcel[]> {
+    const r = await request<{ data: Parcel[] }>('/driver/parcels/available');
+    return r.data ?? [];
+  },
+
+  /** Colis en cours. Hors ligne : dernier colis connu sur le téléphone (comme getActiveDelivery). */
+  async getActiveParcel(): Promise<Parcel | null> {
+    try {
+      const r = await request<{ data: Parcel | null }>('/driver/parcels/active');
+      const p = r.data ? withPendingParcelStatus(r.data) : null;
+      setCachedActiveParcel(p);
+      return p;
+    } catch (e) {
+      if (isNetworkError(e)) return getCachedActiveParcel();
+      return null;
+    }
+  },
+
+  async getParcelHistory(page = 1): Promise<{ data: Parcel[]; meta: { current_page: number; last_page: number; total?: number } }> {
+    return request(`/driver/parcels/history?page=${page}`);
+  },
+
+  async getParcel(reference: string): Promise<Parcel> {
+    const r = await request<{ data: Parcel }>(`/driver/parcels/${encodeURIComponent(reference)}`);
+    return r.data;
+  },
+
+  async acceptParcel(reference: string): Promise<Parcel> {
+    const r = await request<{ data: Parcel }>(`/driver/parcels/${encodeURIComponent(reference)}/accept`, { method: 'POST' });
+    setCachedActiveParcel(r.data);
+    return r.data;
+  },
+
+  /** Ramassage : photo obligatoire (multipart) ; en espèces, cash_received = 1 obligatoire. */
+  async pickupParcel(reference: string, photo: File, cashReceived: boolean): Promise<Parcel> {
+    const form = new FormData();
+    form.append('photo', photo, photo.name || 'colis.jpg');
+    if (cashReceived) form.append('cash_received', '1');
+    const r = await request<{ data: Parcel }>(`/driver/parcels/${encodeURIComponent(reference)}/pickup`, { method: 'POST', body: form });
+    setCachedActiveParcel(r.data);
+    return r.data;
+  },
+
+  async startParcel(reference: string): Promise<Parcel> {
+    const r = await request<{ data: Parcel }>(`/driver/parcels/${encodeURIComponent(reference)}/start`, { method: 'POST' });
+    setCachedActiveParcel(withPendingParcelStatus(r.data));
+    return r.data;
+  },
+
+  async deliverParcel(reference: string, code: string): Promise<{ data: Parcel; earning?: number; message?: string }> {
+    const r = await request<{ data: Parcel; earning?: number; message?: string }>(`/driver/parcels/${encodeURIComponent(reference)}/deliver`, {
+      method: 'POST', body: JSON.stringify({ code }),
+    });
+    setCachedActiveParcel(null);
+    return r;
+  },
+
+  /** Avant ramassage : désistement (status searching_driver). Après : échec (status failed). */
+  async failParcel(reference: string, reason: string): Promise<{ message: string; status: string }> {
+    const r = await request<{ message: string; status: string }>(`/driver/parcels/${encodeURIComponent(reference)}/fail`, {
+      method: 'POST', body: JSON.stringify({ reason }),
+    });
+    if (getCachedActiveParcel()?.reference === reference) setCachedActiveParcel(null);
+    return r;
   },
 };

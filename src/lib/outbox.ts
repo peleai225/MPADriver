@@ -1,11 +1,12 @@
 import { api, getToken } from './api';
 import { isNetworkError, subscribeNetwork, isOnline } from './network';
 import { patchCachedActiveDelivery, getCachedActiveDelivery, setCachedActiveDelivery } from './activeDelivery';
+import { patchCachedActiveParcel, getCachedActiveParcel, setCachedActiveParcel } from './activeParcel';
 import {
-  enqueue, getOutbox, removeFromOutbox, bumpAttempts, hasPendingFor,
-  type DeliveryStep, type OutboxItem,
+  enqueue, getOutbox, removeFromOutbox, bumpAttempts, hasPendingFor, hasPendingForParcel,
+  type DeliveryStep, type OutboxItem, type ParcelStep,
 } from './outboxStore';
-import type { Delivery } from './types';
+import type { Delivery, Parcel } from './types';
 
 /**
  * Envoi fiable des actions critiques de course, même avec un réseau intermittent.
@@ -72,6 +73,33 @@ export async function sendCashCollected(
   return { queued: true };
 }
 
+/**
+ * Colis : « démarrer la livraison » ou « signaler un échec ». Sans réseau, l'action est mise en file
+ * et l'écran avance quand même (démarrer → en livraison ; échec → plus de course active).
+ */
+export async function sendParcelStep(
+  reference: string, step: ParcelStep, reason?: string,
+): Promise<SendResult<Parcel | { message: string; status: string }>> {
+  if (!hasPendingForParcel(reference)) {
+    try {
+      const data = step === 'start'
+        ? await api.startParcel(reference)
+        : await api.failParcel(reference, reason ?? '');
+      return { queued: false, data };
+    } catch (e) {
+      if (!isNetworkError(e)) throw e;
+    }
+  }
+  enqueue({ kind: 'parcel', reference, step, reason });
+  if (step === 'fail') {
+    if (getCachedActiveParcel()?.reference === reference) setCachedActiveParcel(null);
+  } else {
+    patchCachedActiveParcel(reference, { status: 'delivering' });
+  }
+  scheduleFlush();
+  return { queued: true };
+}
+
 /** Position GPS : on n'en garde qu'une en file (la plus récente). */
 export async function sendLocation(pos: { lat: number; lng: number; accuracy?: number; speed?: number; heading?: number }): Promise<void> {
   try {
@@ -100,6 +128,9 @@ async function sendItem(item: OutboxItem): Promise<void> {
   } else if (item.kind === 'cash') {
     const r = await api.confirmCashCollected(item.deliveryId, item.amount);
     emit(CASH_SYNCED_EVENT, { deliveryId: item.deliveryId, ...r });
+  } else if (item.kind === 'parcel') {
+    if (item.step === 'start') await api.startParcel(item.reference);
+    else await api.failParcel(item.reference, item.reason ?? 'Problème signalé hors ligne');
   } else {
     await api.updateLocation(item.lat, item.lng, item.accuracy, item.speed, item.heading);
   }
@@ -149,7 +180,10 @@ export async function flushOutbox(): Promise<void> {
   }
   if (synced > 0) {
     // Resynchronise l'écran avec l'état réel du serveur.
-    await api.getActiveDelivery().catch(() => null);
+    await Promise.all([
+      api.getActiveDelivery().catch(() => null),
+      api.getActiveParcel().catch(() => null),
+    ]);
     emit(OUTBOX_SYNCED_EVENT, { synced });
   }
   if (getOutbox().length > 0 && isOnline()) scheduleFlush(15000);

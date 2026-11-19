@@ -12,6 +12,7 @@ import { listenNewDelivery, listenDriverAssigned } from '../lib/echo';
 import { vibrate, playAlert, notify } from '../lib/alert';
 import { formatFCFA } from '../lib/format';
 import { setBadge, clearBadge } from '../lib/badge';
+import { getCachedActiveParcel } from '../lib/activeParcel';
 import type { Delivery } from '../lib/types';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -37,6 +38,8 @@ export function DeliveryRequestAlert() {
 
   const showNewDelivery = useCallback(async () => {
     if (!driver?.is_available) return;
+    // Colis en cours : une seule course à la fois, inutile de proposer un repas (le serveur refuserait).
+    if (getCachedActiveParcel()) return;
     try {
       const list = await api.getPendingDeliveries();
       const fresh = list.find(d => !shownIdsRef.current.has(d.id));
